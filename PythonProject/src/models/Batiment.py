@@ -1,5 +1,5 @@
 class Batiment:
-    def init(self, surface, nbOccupants, tempInt, chauffageType, isolantType, chambres):
+    def __init__(self, surface, nbOccupants, tempInt, chauffageType, isolantType, chambres):
         self.surface = surface
         self.nbOccupants = nbOccupants
         self.tempInt = tempInt
