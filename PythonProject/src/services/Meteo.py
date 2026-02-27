@@ -1,53 +1,84 @@
 import requests
+import openmeteo_requests
+import requests_cache
+from retry_requests import retry
+"""
+    ****UNE BONNE PARTIE DE CE CODE EST FOURNIE PAR https://open-meteo.com/en/docs/historical-forecast-api****
+    
+    On utilise :
+    - requests: pour la meteo actuelle (API simple forecast)
+    - openmeteo_requests: pour l'API historique
+    - requests_cache + retry : pour eviter trop de requests et gerer les erreurs reseau
+"""
+
 
 class MeteoService:
     """
-    Cette classe va s'occuper de communiquer avec l'API Open-Meteo.
-    Retourne une temperature extérieure.
+    Cette classe s'occupe de communiquer avec l'API Open-Meteo.
+    Pour ce projet on restera toujours a Montreal
     """
 
+    #Coordonnees de Montreal
     LATITUDE = 45.5017
     LONGITUDE = -73.5673
 
-    def temperature_actuelle(self):
+    """
+    Initialisation de la requete avec : 
+    - cache local (évite de refaire la même requete pendant 1h)
+    - retry automatique en cas d'erreur de reseau
+    """
+    def __init__(self):
+        cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
+        retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
+        self.openmeteo = openmeteo_requests.Client(session = retry_session)
+
+    def temperature_actuelle(self) -> float:
         """
-        :return: la temperature actuelle a Montreal
+        Retourne la temperature actuelle a Montreal en °C
+
+        On utilise l'API forecast avec current_weather.
         """
-        url = "https://api.open-meteo.com/v1/forecast"
+        url = "https://historical-forecast-api.open-meteo.com/v1/forecast"
 
         parametres = {
             "latitude" : self.LATITUDE,
             "longitude" : self.LONGITUDE,
-            "meteo_actuelle": "true"
-
+            "current_weather": "true",
+            "timezone": "America/Toronto"
         }
 
-        reponse = requests.get(url, params=parametres)
-        reponse.raise_for_status()
+        r = requests.get(url, params=parametres, timeout = 10)
+        r.raise_for_status()
+        donnees = r.json()
 
-        donnees = reponse.json()
+        return float(donnees["current_weather"]["temperature"])
 
-        return float(donnees["meteo_actuelle"]["temperature"])
-
-    def temperature_historique(self, date):
+    def temperature_historique(self, date: str) -> float:
         """
+        Retourne la temperature moyenne d'une journee passee
+
         :param date: (format AAAA-MM-JJ)
-        :return: temperature moyenne de telle journee
+        :return: temperature moyenne de la journee
+
+        On utilise l'API historical-forecast.
+        On demande les temperatures horaire (tempereture_2m)
+        puis on calcule la moyenne sur la journee.
         """
-        url = "https://archive-api.open-meteo.com/v1/archive"
+        url = "https://historical-forecast-api.open-meteo.com/v1/forecast"
 
         parametres = {
             "latitude": self.LATITUDE,
             "longitude": self.LONGITUDE,
-            "debut_date": date,
-            "fin-date": date,
-            "daily": "temperature_2m_mean",
-            "timezone": "America/Toronto"
+            "start_date": date,
+            "end_date": date,
+            "hourly": "temperature_2m",
+            "timezone": "America/Toronto",
         }
 
-        reponse = requests.get(url, params=parametres)
-        reponse.raise_for_status()
+        reponses = self.openmeteo.weather_api(url, params=parametres)
+        response = reponses[0]
 
-        donnees = reponse.json()
+        hourly = response.Hourly()
+        temps = hourly.Variables(0).ValuesAsNumpy()
 
-        return float(donnees["daily"]["temperature_2m_mean"][0])
+        return float(temps.mean())

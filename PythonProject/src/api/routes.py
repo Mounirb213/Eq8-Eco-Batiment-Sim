@@ -22,7 +22,7 @@ def simulate():
     temperature_interieure = float(data.get("temp_interieur_c", 21.0))
 
     #Recuperation meteo
-    if date == "actuelle":
+    if date == "current":
         temperature_exterieure = meteo_service.temperature_actuelle()
     else:
         temperature_exterieure = meteo_service.temperature_historique(date)
@@ -36,7 +36,6 @@ def simulate():
             "isolation": isolation,
             "temperature_interieure": temperature_interieure,
             "temperature_exterieure": temperature_exterieure,
-            "ville": "Montreal"
         },
         "message": "Meteo Montreal recuperee avec succes"
     }
