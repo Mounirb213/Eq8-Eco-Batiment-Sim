@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request
+from services.Meteo import MeteoService
 
 api_routes = Blueprint("api_routes", __name__)
+meteo_service = MeteoService()
 
 @api_routes.get("/health")
 def health():
@@ -17,19 +19,26 @@ def simulate():
     chauffage = str(data.get("chauffage", "electricite")).lower()
     isolation = str(data.get("isolation", "moyenne")).lower()
     date = data.get("date", "current")
-    temp_int = float(data.get("temp_interieur_c", 21.0))
+    temperature_interieure = float(data.get("temp_interieur_c", 21.0))
+
+    #Recuperation meteo
+    if date == "actuelle":
+        temperature_exterieure = meteo_service.temperature_actuelle()
+    else:
+        temperature_exterieure = meteo_service.temperature_historique(date)
 
     #Reponse test
     response = {
-        "received": {
+        "donnees_recues": {
             "surface_m2": surface_m2,
             "nb_occupants": nb_occupants,
             "chauffage": chauffage,
             "isolation": isolation,
-            "date": date,
-            "temp_interieur_c": temp_int,
+            "temperature_interieure": temperature_interieure,
+            "temperature_exterieure": temperature_exterieure,
+            "ville": "Montreal"
         },
-        "message": "OK - endpoint /simulate fonctionne."
+        "message": "Meteo Montreal recuperee avec succes"
     }
 
     return jsonify(response), 200
