@@ -1,3 +1,19 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Python
+__pycache__/
+*.pyc
+.cache/
+venv/
+.env
+
+# Godot
+.godot/
+.import/
+export_presets.cfg
+
+# OS
+.DS_Store
+Thumbs.db
