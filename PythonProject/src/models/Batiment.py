@@ -1,76 +1,129 @@
 from models.ComposantBatiment import ComposantBatiment
 
+
 class Batiment:
     """
-    Represente les differentes composantes envoyées de Godot
+    Représente un bâtiment contenant plusieurs composantes.
 
-    Chaque élément est representé par un dictionnaire (ressemble a liste) contenant: surface: surface en metres carres
+    Cette classe sert à :
+    - stocker toutes les composantes du bâtiment
+    - retourner les composantes utiles pour l'énergie
+    - retourner les composantes utiles pour la thermographie
+    - calculer des surfaces totales
     """
 
-    def __init__(self, nb_occupants, temp_interieure, chauffage_type, murs=None, fenetres=None, toit=None, portes=None):
+    def __init__(self, composantes=None):
+        """
+        Initialise le bâtiment avec une liste de composantes.
 
-        #Nombre de personnes dans la maison
-        #influence les pertes et gains thermiques et la consommation énergétique totale
-        self.nb_occupants = nb_occupants
+        Paramètre :
+        - composantes : liste d'objets ComposantBatiment ou liste de dictionnaires venant de Godot
+        """
+        self.composantes = []
 
-        #température interieure souhaitée
-        self.temp_interieure = temp_interieure
+        if composantes is not None:
+            for composante in composantes:
+                self.ajouter_composante(composante)
 
-        #type de chauffage utilisé
-        self.chauffage_type = chauffage_type
+    def ajouter_composante(self, composante):
+        """
+        Ajoute une composante au bâtiment.
 
-        #si Godot envoi une liste, on l'utilise. sinon on crée une nouvelle liste vide
-        #sinon ca creerait une liste partagée entre plusieurs objets
+        On accepte :
+        - un objet ComposantBatiment
+        - un dictionnaire, qui sera converti avec from_dict()
+        """
+        if isinstance(composante, ComposantBatiment):
+            self.composantes.append(composante)
 
-        if murs is not None:
-            # Godot envoi les objets
-            self.murs = murs
-        else :
-            # si rien n'est fourni
-            self.murs = []
+        elif isinstance(composante, dict):
+            nouvelle_composante = ComposantBatiment.from_dict(composante)
+            self.composantes.append(nouvelle_composante)
 
-        if fenetres is not None:
-            self.fenetres = fenetres
-        else :
-            self.fenetres = []
+    def toutes_les_composantes(self):
+        """
+        Retourne toutes les composantes du bâtiment.
+        """
+        return self.composantes
 
-        if toit is not None:
-            self.toit = toit
-        else :
-            self.toit = []
+    def composantes_energetiques(self):
+        """
+        Retourne seulement les composantes qui doivent être utilisées pour le calcul énergétique.
+        """
+        composantes_a_calculer = []
 
-        if portes is not None:
-            self.portes = portes
-        else :
-            self.portes = []
+        for composante in self.composantes:
+            if composante.doit_compter_pour_energie():
+                composantes_a_calculer.append(composante)
 
+        return composantes_a_calculer
 
-    #Calculer la surface totale du batiment en additionnant les surfaces de toutes les composantes
+    def composantes_thermographie(self):
+        """
+        Retourne toutes les composantes à afficher dans la thermographie.
+        """
+        return self.composantes
+
+    def composantes_par_type(self, type_composant):
+        """
+        Retourne toutes les composantes d'un certain type. Exemple : mur, fenetre, toit, porte
+        """
+        resultat = []
+
+        for composante in self.composantes:
+            if composante.type_composant == type_composant:
+                resultat.append(composante)
+
+        return resultat
+
     def surface_totale(self):
+        """
+        Retourne la surface totale de toutes les composantes.
+        """
+        total = 0.0
 
-        # Surface des murs
-        surface_murs = 0
-        # mur est dictionnarie et on récupere la surface de chaque mur
-        for element_murs in self.murs:
-            surface_murs += element_murs.get("surface", 0)
+        for composante in self.composantes:
+            total += composante.surface
 
-        # Surface des fenetres
-        surface_fenetres = 0
-        for fenetre in self.fenetres:
-            surface_fenetres += fenetre.get("surface", 0)
+        return total
 
-        #Surface du toit
-        surface_toit = 0
-        for element_toit in self.toit:
-            surface_toit += element_toit.get("surface", 0)
+    def surface_totale_energetique(self):
+        """
+        Retourne la surface totale des composantes utilisées pour le calcul énergétique.
+        """
+        total = 0.0
 
-        #Surface des portes
-        surface_portes = 0
-        for porte in self.portes:
-            surface_portes += porte.get("surface", 0)
+        for composante in self.composantes_energetiques():
+            total += composante.surface
 
+        return total
 
-        #Surface totale
-        surface_totale = (surface_murs + surface_fenetres + surface_toit + surface_portes)
+    def nombre_de_composantes(self):
+        """
+        Retourne le nombre total de composantes.
+        """
+        return len(self.composantes)
 
-        return surface_totale
+    def to_dict(self):
+        """
+        Convertit le bâtiment en dictionnaire JSON.
+        """
+        liste_composantes = []
+
+        for composante in self.composantes:
+            liste_composantes.append(composante.to_dict())
+
+        return {
+            "nombre_de_composantes": self.nombre_de_composantes(),
+            "surface_totale": self.surface_totale(),
+            "surface_totale_energetique": self.surface_totale_energetique(),
+            "composantes": liste_composantes
+        }
+
+    def __repr__(self):
+        return (
+            f"Batiment("
+            f"nombre_de_composantes={self.nombre_de_composantes()}, "
+            f"surface_totale={self.surface_totale()}, "
+            f"surface_totale_energetique={self.surface_totale_energetique()})"
+        )
