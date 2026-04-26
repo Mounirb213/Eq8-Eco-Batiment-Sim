@@ -1,0 +1,437 @@
+[gd_scene format=3 uid="uid://bscf64t74m7w1"]
+
+[ext_resource type="PackedScene" uid="uid://d1trdljoirhex" path="res://maison.glb" id="1_2iqi2"]
+[ext_resource type="Script" uid="uid://br881xuibieeb" path="res://TestSimulationComplete.gd" id="1_mpm82"]
+[ext_resource type="Texture2D" uid="uid://bqe4fd6g78wlq" path="res://Therm.png" id="2_1gfko"]
+[ext_resource type="Script" uid="uid://dffjy84mxski2" path="res://Building3D.gd" id="2_t6gs0"]
+[ext_resource type="Script" uid="uid://c8xejh7l56f6p" path="res://MainMenu.gd" id="3_uobxk"]
+[ext_resource type="Script" uid="uid://dip15ect7u7bp" path="res://FlaskConnector.gd" id="5_mpm82"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_43spk"]
+sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_2iqi2"]
+sky_material = SubResource("ProceduralSkyMaterial_43spk")
+
+[sub_resource type="Environment" id="Environment_1gfko"]
+background_mode = 2
+sky = SubResource("Sky_2iqi2")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_1gfko"]
+size = Vector2(1000, 1000)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2iqi2"]
+bg_color = Color(0, 0, 0, 0.6666667)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1gfko"]
+bg_color = Color(0, 0, 0, 0.6666667)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_t6gs0"]
+bg_color = Color(0, 0, 0, 0.6666667)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vtp77"]
+bg_color = Color(0, 0, 0, 0.6666667)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lfd1m"]
+bg_color = Color(0, 0, 0, 0.6666667)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uobxk"]
+bg_color = Color(0.14117648, 0.14117648, 0.14117648, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mpm82"]
+bg_color = Color(0.23552623, 0.7019861, 0.42092606, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qdflh"]
+bg_color = Color(0.34117648, 0.41960785, 0.6, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="Node3D" type="Node3D" unique_id=1282876856]
+script = ExtResource("1_mpm82")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1619139548]
+transform = Transform3D(-0.8976127, -0.29039526, 0.33160552, -0.01965601, 0.7779286, 0.62804526, -0.44034678, 0.5572233, -0.7039865, 19.96405, 25.40625, -34.86916)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1705970871]
+environment = SubResource("Environment_1gfko")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=257073510]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
+shadow_enabled = true
+
+[node name="maison" parent="." unique_id=326536285 instance=ExtResource("1_2iqi2")]
+script = ExtResource("2_t6gs0")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=263595434]
+mesh = SubResource("PlaneMesh_1gfko")
+
+[node name="Control" type="Control" parent="." unique_id=461165955]
+layout_mode = 3
+anchor_right = 1.0070001
+anchor_bottom = 0.998
+offset_right = -0.064086914
+offset_bottom = 0.29595947
+
+[node name="ZoneGris1" type="ColorRect" parent="Control" unique_id=1529115221]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = 422.0
+offset_bottom = 1079.0
+color = Color(0, 0, 0, 0.3137255)
+script = ExtResource("3_uobxk")
+
+[node name="ParamètresDuBatîment" type="Panel" parent="Control/ZoneGris1" unique_id=310476235]
+layout_mode = 0
+offset_left = 71.0
+offset_top = 43.0
+offset_right = 320.0
+offset_bottom = 83.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_2iqi2")
+
+[node name="ParamètresDuBatîment" type="Label" parent="Control/ZoneGris1/ParamètresDuBatîment" unique_id=1283290196]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 8.0
+offset_right = 220.0
+offset_bottom = 31.0
+text = "Paramètres du batîment"
+
+[node name="NbOccupantsPanel" type="Panel" parent="Control/ZoneGris1" unique_id=958356950]
+layout_mode = 0
+offset_left = 43.0
+offset_top = 111.0
+offset_right = 225.0
+offset_bottom = 151.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_1gfko")
+
+[node name="NbOccupantsLabel" type="Label" parent="Control/ZoneGris1/NbOccupantsPanel" unique_id=277617812]
+layout_mode = 0
+offset_left = 9.0
+offset_top = 8.0
+offset_right = 171.0
+offset_bottom = 31.0
+text = "Nombre d'occupants"
+
+[node name="NbOccupantsButton" type="OptionButton" parent="Control/ZoneGris1/NbOccupantsPanel" unique_id=547343922]
+layout_mode = 0
+offset_left = 200.0
+offset_right = 266.0
+offset_bottom = 40.0
+item_count = 5
+popup/item_0/text = "1"
+popup/item_0/id = 0
+popup/item_1/text = "2"
+popup/item_1/id = 1
+popup/item_2/text = "3"
+popup/item_2/id = 2
+popup/item_3/text = "4"
+popup/item_3/id = 3
+popup/item_4/text = "5"
+popup/item_4/id = 4
+
+[node name="IsolationPanel" type="Panel" parent="Control/ZoneGris1" unique_id=1412346136]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 168.0
+offset_right = 226.0
+offset_bottom = 208.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_t6gs0")
+
+[node name="IsolationLabel" type="Label" parent="Control/ZoneGris1/IsolationPanel" unique_id=990343159]
+layout_mode = 0
+offset_left = 22.0
+offset_top = 8.0
+offset_right = 164.0
+offset_bottom = 31.0
+text = "Qualité d'isolation"
+
+[node name="IsolationButton" type="OptionButton" parent="Control/ZoneGris1/IsolationPanel" unique_id=291982786]
+layout_mode = 0
+offset_left = 201.0
+offset_right = 320.0
+offset_bottom = 40.0
+item_count = 4
+popup/item_0/text = "Très bonne"
+popup/item_0/id = 0
+popup/item_1/text = "Bonne"
+popup/item_1/id = 1
+popup/item_2/text = "Moyenne"
+popup/item_2/id = 2
+popup/item_3/text = "Mauvaise"
+popup/item_3/id = 3
+
+[node name="ChauffagePanel" type="Panel" parent="Control/ZoneGris1" unique_id=755604022]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 225.0
+offset_right = 227.0
+offset_bottom = 265.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_vtp77")
+
+[node name="ChauffageLabel" type="Label" parent="Control/ZoneGris1/ChauffagePanel" unique_id=787583657]
+layout_mode = 0
+offset_left = 27.0
+offset_top = 8.0
+offset_right = 168.0
+offset_bottom = 31.0
+text = "Type de chauffage"
+horizontal_alignment = 1
+
+[node name="ChauffageButton" type="OptionButton" parent="Control/ZoneGris1/ChauffagePanel" unique_id=968306769]
+layout_mode = 0
+offset_left = 211.0
+offset_top = 1.0
+offset_right = 277.0
+offset_bottom = 41.0
+item_count = 4
+popup/item_0/text = "Électrique"
+popup/item_0/id = 0
+popup/item_1/text = "Gaz"
+popup/item_1/id = 1
+popup/item_2/text = "Thermopompe"
+popup/item_2/id = 2
+popup/item_3/text = "Mazout"
+popup/item_3/id = 3
+
+[node name="DatePanel" type="Panel" parent="Control/ZoneGris1" unique_id=869901144]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 286.0
+offset_right = 298.0
+offset_bottom = 326.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_lfd1m")
+
+[node name="DateLabel" type="Label" parent="Control/ZoneGris1/DatePanel" unique_id=1349956723]
+layout_mode = 0
+offset_left = 66.0
+offset_top = 8.0
+offset_right = 105.0
+offset_bottom = 31.0
+text = "Date"
+
+[node name="DateJourBox" type="SpinBox" parent="Control/ZoneGris1/DatePanel" unique_id=1029780015]
+layout_mode = 0
+offset_left = -40.0
+offset_top = 46.0
+offset_right = 46.5
+offset_bottom = 77.0
+min_value = 1.0
+max_value = 31.0
+value = 1.0
+alignment = 1
+
+[node name="DateMoisBox" type="SpinBox" parent="Control/ZoneGris1/DatePanel" unique_id=1671382225]
+layout_mode = 0
+offset_left = 45.0
+offset_top = 46.0
+offset_right = 131.5
+offset_bottom = 77.0
+min_value = 1.0
+max_value = 12.0
+value = 1.0
+alignment = 1
+
+[node name="DateAnneeBox" type="SpinBox" parent="Control/ZoneGris1/DatePanel" unique_id=2051435340]
+layout_mode = 0
+offset_left = 130.0
+offset_top = 47.0
+offset_right = 216.5
+offset_bottom = 78.0
+min_value = 2016.0
+max_value = 2026.0
+value = 2016.0
+alignment = 1
+
+[node name="Panel" type="Panel" parent="Control/ZoneGris1/DatePanel" unique_id=1017912235]
+layout_mode = 0
+offset_left = 49.0
+offset_top = 87.0
+offset_right = 211.0
+offset_bottom = 111.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_uobxk")
+
+[node name="DateCheckButton" type="CheckButton" parent="Control/ZoneGris1/DatePanel" unique_id=1378308466]
+layout_mode = 0
+offset_left = 46.0
+offset_top = 80.0
+offset_right = 209.0
+offset_bottom = 117.0
+text = "Météo actuelle"
+
+[node name="GoButton" type="Button" parent="Control/ZoneGris1" unique_id=431457439]
+layout_mode = 0
+offset_left = 54.0
+offset_top = 412.0
+offset_right = 363.0
+offset_bottom = 525.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_mpm82")
+text = "GO"
+
+[node name="ThermoCheckButton" type="CheckBox" parent="Control/ZoneGris1" unique_id=538081495]
+layout_mode = 0
+offset_left = 140.0
+offset_top = 532.0
+offset_right = 292.0
+offset_bottom = 563.0
+text = " Thermographie"
+
+[node name="ZoneGris2" type="ColorRect" parent="Control" unique_id=1478119359]
+layout_mode = 0
+offset_left = 422.0
+offset_top = 889.0
+offset_right = 1920.0
+offset_bottom = 1081.0
+color = Color(0, 0, 0, 0.3137255)
+
+[node name="ResultatsPanel" type="Panel" parent="Control/ZoneGris2" unique_id=1085520380]
+layout_mode = 0
+offset_left = 120.0
+offset_top = 76.0
+offset_right = 301.0
+offset_bottom = 126.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_qdflh")
+
+[node name="ResultatsLabel" type="Label" parent="Control/ZoneGris2/ResultatsPanel" unique_id=545890590]
+layout_mode = 0
+offset_left = 47.0
+offset_top = 13.0
+offset_right = 134.0
+offset_bottom = 36.0
+text = "RÉSULTATS"
+
+[node name="ConsommationPanel" type="Panel" parent="Control/ZoneGris2" unique_id=1135420522]
+layout_mode = 0
+offset_left = 417.0
+offset_top = 28.0
+offset_right = 733.0
+offset_bottom = 78.0
+
+[node name="ConsommationLabel" type="Label" parent="Control/ZoneGris2/ConsommationPanel" unique_id=2072147250]
+layout_mode = 0
+offset_left = 53.0
+offset_top = 12.0
+offset_right = 125.0
+offset_bottom = 35.0
+text = "Consommation énergétique"
+
+[node name="ConsommationTextEdit" type="TextEdit" parent="Control/ZoneGris2/ConsommationPanel" unique_id=1707816264]
+layout_mode = 0
+offset_left = 52.0
+offset_top = 87.0
+offset_right = 185.0
+offset_bottom = 144.0
+editable = false
+
+[node name="kWhParAnLabel" type="Label" parent="Control/ZoneGris2/ConsommationPanel" unique_id=557374151]
+layout_mode = 0
+offset_left = 201.0
+offset_top = 105.0
+offset_right = 262.0
+offset_bottom = 128.0
+text = "kWh / an"
+
+[node name="CoutAnnuelPanel" type="Panel" parent="Control/ZoneGris2" unique_id=1948375252]
+layout_mode = 0
+offset_left = 788.0
+offset_top = 28.0
+offset_right = 964.0
+offset_bottom = 78.0
+
+[node name="CoutAnnuelLabel" type="Label" parent="Control/ZoneGris2/CoutAnnuelPanel" unique_id=1862424614]
+layout_mode = 0
+offset_left = 39.0
+offset_top = 13.0
+offset_right = 134.0
+offset_bottom = 36.0
+text = "Coût annuel"
+
+[node name="CoutAnnuelTextEdit" type="TextEdit" parent="Control/ZoneGris2/CoutAnnuelPanel" unique_id=2044725461]
+layout_mode = 0
+offset_left = 11.0
+offset_top = 88.0
+offset_right = 144.0
+offset_bottom = 145.0
+editable = false
+
+[node name="$ParAnLabel" type="Label" parent="Control/ZoneGris2/CoutAnnuelPanel" unique_id=1947270377]
+layout_mode = 0
+offset_left = 160.0
+offset_top = 106.0
+offset_right = 221.0
+offset_bottom = 129.0
+text = "$ / an"
+
+[node name="EconomiesPanel" type="Panel" parent="Control/ZoneGris2" unique_id=2129825420]
+layout_mode = 0
+offset_left = 1038.0
+offset_top = 26.0
+offset_right = 1214.0
+offset_bottom = 76.0
+
+[node name="CoutAnnuelLabel" type="Label" parent="Control/ZoneGris2/EconomiesPanel" unique_id=1832724819]
+layout_mode = 0
+offset_left = 43.0
+offset_top = 13.0
+offset_right = 130.0
+offset_bottom = 36.0
+text = "Économies"
+
+[node name="CoutAnnuelTextEdit" type="TextEdit" parent="Control/ZoneGris2/EconomiesPanel" unique_id=1099723618]
+layout_mode = 0
+offset_left = 11.0
+offset_top = 88.0
+offset_right = 144.0
+offset_bottom = 145.0
+editable = false
+
+[node name="$ParAnLabel" type="Label" parent="Control/ZoneGris2/EconomiesPanel" unique_id=387300371]
+layout_mode = 0
+offset_left = 160.0
+offset_top = 106.0
+offset_right = 221.0
+offset_bottom = 129.0
+text = "$ / an"
+
+[node name="Therm" type="Sprite2D" parent="." unique_id=1874937732]
+position = Vector2(217.59372, 819.3906)
+scale = Vector2(0.32891843, 0.3289185)
+texture = ExtResource("2_1gfko")
+
+[node name="FlaskConnector" type="Node" parent="." unique_id=1156105827]
+script = ExtResource("5_mpm82")
+
+[node name="SimulationController" type="Node" parent="." unique_id=381123888]
