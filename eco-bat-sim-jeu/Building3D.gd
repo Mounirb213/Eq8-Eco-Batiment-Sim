@@ -5,6 +5,9 @@ class_name Building3D
 @export var temperature_min_couleur: float = -15.0
 @export var temperature_max_couleur: float = 30.0
 @export var utiliser_metadonnees: bool = true
+@export var corriger_surface_automatique: bool = true
+@export var seuil_surface_trop_grande: float = 20.0
+@export var facteur_surface_trop_grande: float = 0.03
 
 var noeuds_maillages: Array = []
 var materiaux_originaux: Dictionary = {}
@@ -97,6 +100,9 @@ func construire_composante_depuis_noeud(noeud: MeshInstance3D) -> Dictionary:
 			type_composant = str(noeud.get_meta("type_composant")).to_lower()
 
 	var surface = calculer_surface_mesh_instance(noeud)
+
+	if corriger_surface_automatique:
+		surface = corriger_surface(surface)
 
 	if utiliser_metadonnees and noeud.has_meta("surface"):
 		surface = float(noeud.get_meta("surface"))
@@ -412,3 +418,17 @@ func reinitialiser_thermographie():
 func arrondir(valeur: float, nombre_decimales: int) -> float:
 	var facteur = pow(10.0, nombre_decimales)
 	return round(valeur * facteur) / facteur
+	
+func corriger_surface(surface_brute: float) -> float:
+	"""
+	Corrige seulement les surfaces anormalement grandes.
+
+	Exemple :
+	- une fenêtre de 2.4 m² reste 2.4 m²
+	- un mur calculé à 493 m² devient environ 14.8 m²
+	"""
+
+	if surface_brute > seuil_surface_trop_grande:
+		return surface_brute * facteur_surface_trop_grande
+
+	return surface_brute

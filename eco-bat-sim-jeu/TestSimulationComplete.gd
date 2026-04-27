@@ -3,6 +3,7 @@ extends Node3D
 @onready var main_menu: MainMenu = $Control/ZoneGris1
 @onready var building_3d: Building3D = $maison
 @onready var flask_connector: FlaskConnector = $FlaskConnector
+@onready var results_panel: ResultsPanel = $Control/ZoneGris2
 
 var dernier_resultat_flask: Dictionary = {}
 var simulation_en_cours: bool = false
@@ -71,6 +72,7 @@ func _on_simulation_reussie(resultat: Dictionary):
 	dernier_resultat_flask = resultat
 
 	afficher_resume_console(resultat)
+	results_panel.afficher_resultats(resultat)
 
 	if main_menu.lire_thermographie_active():
 		appliquer_thermographie_depuis_resultat(resultat)
@@ -80,6 +82,7 @@ func _on_simulation_reussie(resultat: Dictionary):
 
 func _on_erreur_simulation(message: String):
 	simulation_en_cours = false
+	results_panel.afficher_erreur(message)
 
 	print("")
 	print("===== ERREUR FLASK =====")

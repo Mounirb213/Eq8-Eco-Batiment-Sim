@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://dffjy84mxski2" path="res://Building3D.gd" id="2_t6gs0"]
 [ext_resource type="Script" uid="uid://c8xejh7l56f6p" path="res://MainMenu.gd" id="3_uobxk"]
 [ext_resource type="Script" uid="uid://dip15ect7u7bp" path="res://FlaskConnector.gd" id="5_mpm82"]
+[ext_resource type="Script" uid="uid://dwahjr5806l2u" path="res://ResultsPanel.gd" id="5_vtp77"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_43spk"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -316,6 +317,10 @@ offset_top = 889.0
 offset_right = 1920.0
 offset_bottom = 1081.0
 color = Color(0, 0, 0, 0.3137255)
+script = ExtResource("5_vtp77")
+consommation_affichage_path = NodePath("ConsommationPanel/ConsommationTextEdit")
+cout_affichage_path = NodePath("CoutAnnuelPanel/CoutAnnuelTextEdit")
+economies_affichage_path = NodePath("EconomiesPanel/CoutAnnuelTextEdit")
 
 [node name="ResultatsPanel" type="Panel" parent="Control/ZoneGris2" unique_id=1085520380]
 layout_mode = 0
