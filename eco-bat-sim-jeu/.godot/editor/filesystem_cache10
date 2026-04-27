@@ -1,4 +1,5 @@
 63f7b34db8d8cdea90c76aacccf841ec
+<<<<<<< HEAD
 ::res://::1777327659
 Building3D.gd::GDScript::7521119248674942611::1777327638::0::1::::Building3D<>Node3D<><>0<>0<><>::
 FlaskConnector.gd::GDScript::7753370896213402161::1777327638::0::1::::FlaskConnector<>Node<><>0<>0<><>::
@@ -11,3 +12,17 @@ TestFlaskConnector.gd::GDScript::958963126088748328::1777327638::0::1::::<>Node3
 testMainMenu.gd::GDScript::8510519444612949440::1777327638::0::1::::<>Node3D<><>0<>0<><>::
 TestSimulationComplete.gd::GDScript::3649806822124725353::1777327638::0::1::::<>Node3D<><>0<>0<><>::
 Therm.png::CompressedTexture2D::3519469620453295718::1777327638::1777327663::1::::<><><>0<>0<>f81d3540883c96ee4f4029a5e512adbe<>res://.godot/imported/Therm.png-361ac5b852d070cc24d3530751254754.ctex::
+=======
+::res://::1777327311
+Building3D.gd::GDScript::7521119248674942611::1777051316::0::1::::Building3D<>Node3D<><>0<>0<><>::
+FlaskConnector.gd::GDScript::7753370896213402161::1777051479::0::1::::FlaskConnector<>Node<><>0<>0<><>::
+icon.svg::CompressedTexture2D::5610359792561998072::1775947843::1775947856::1::::<><><>0<>0<>32f325612e41814149bd333765cdfa99<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
+MainMenu.gd::GDScript::7136813253539152889::1777052675::0::1::::MainMenu<>Control<><>0<>0<><>::
+maison.glb::PackedScene::9024433301561579843::1775948083::1775948084::1::::<><><>0<>0<>5c3e7d740757d97125fb690faa464890<>res://.godot/imported/maison.glb-d5d68cf0fc376c61e3187e1852997daf.scn::
+Simulation.tscn::PackedScene::3654309123282322422::1777053642::0::1::::<><><>0<>0<><>::uid://d1trdljoirhex::::res://maison.glb<>uid://br881xuibieeb::::res://TestSimulationComplete.gd<>uid://bqe4fd6g78wlq::::res://Therm.png<>uid://dffjy84mxski2::::res://Building3D.gd<>uid://c8xejh7l56f6p::::res://MainMenu.gd<>uid://dip15ect7u7bp::::res://FlaskConnector.gd
+test.gd::GDScript::1916426923033311432::1777051060::0::1::::<>Node3D<><>0<>0<><>::
+TestFlaskConnector.gd::GDScript::958963126088748328::1777051479::0::1::::<>Node3D<><>0<>0<><>::
+testMainMenu.gd::GDScript::8510519444612949440::1777052795::0::1::::<>Node3D<><>0<>0<><>::
+TestSimulationComplete.gd::GDScript::3649806822124725353::1777053392::0::1::::<>Node3D<><>0<>0<><>::
+Therm.png::CompressedTexture2D::3519469620453295718::1777043899::1777043899::1::::<><><>0<>0<>f81d3540883c96ee4f4029a5e512adbe<>res://.godot/imported/Therm.png-361ac5b852d070cc24d3530751254754.ctex::
+>>>>>>> Python
