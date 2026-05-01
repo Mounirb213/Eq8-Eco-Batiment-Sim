@@ -35,8 +35,17 @@ func configurer_interface():
 
 func connecter_signaux():
 	go_button.pressed.connect(_on_go_button_pressed)
-	date_check_button.toggled.connect(_on_date_check_button_toggled)
+
 	thermo_check_button.toggled.connect(_on_thermo_check_button_toggled)
+	date_check_button.toggled.connect(_on_date_check_button_toggled)
+
+	nb_occupants_button.item_selected.connect(_on_parametre_modifie)
+	isolation_button.item_selected.connect(_on_parametre_modifie)
+	chauffage_button.item_selected.connect(_on_parametre_modifie)
+
+	date_jour_box.value_changed.connect(_on_date_modifiee)
+	date_mois_box.value_changed.connect(_on_date_modifiee)
+	date_annee_box.value_changed.connect(_on_date_modifiee)
 
 
 func _on_go_button_pressed():
@@ -44,19 +53,30 @@ func _on_go_button_pressed():
 	simulation_demandee.emit(parametres)
 
 
-func _on_date_check_button_toggled(active):
-	actualiser_etat_date()
-
-
 func _on_thermo_check_button_toggled(active):
 	thermographie_changee.emit(active)
 
 
+func _on_date_check_button_toggled(active):
+	actualiser_etat_date()
+	desactiver_thermographie_si_active()
+
+
+func _on_parametre_modifie(index):
+	desactiver_thermographie_si_active()
+
+
+func _on_date_modifiee(value):
+	desactiver_thermographie_si_active()
+
+
+func desactiver_thermographie_si_active():
+	if thermo_check_button.button_pressed:
+		thermo_check_button.set_pressed_no_signal(false)
+		thermographie_changee.emit(false)
+
+
 func actualiser_etat_date():
-	"""
-	Si météo actuelle est cochée, la date entrée ne compte pas.
-	On désactive visuellement les SpinBox pour montrer que la date est ignorée.
-	"""
 	var meteo_actuelle_active = date_check_button.button_pressed
 
 	date_jour_box.editable = not meteo_actuelle_active
@@ -127,7 +147,6 @@ func configurer_date():
 	date_annee_box.max_value = 2026
 	date_annee_box.value = 2024
 
-	# Par défaut, on utilise la météo actuelle.
 	date_check_button.button_pressed = true
 
 
@@ -177,10 +196,6 @@ func lire_type_chauffage() -> String:
 
 
 func lire_date_meteo() -> String:
-	"""
-	Si DateCheckButton est coché, on utilise la météo actuelle.
-	Donc on ignore totalement la date entrée dans les SpinBox.
-	"""
 	if date_check_button.button_pressed:
 		return "current"
 
