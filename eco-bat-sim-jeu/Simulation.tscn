@@ -80,6 +80,13 @@ corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_crdol"]
+bg_color = Color(0, 0, 0, 0.3137255)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
 [node name="Node3D" type="Node3D" unique_id=1282876856]
 script = ExtResource("1_mpm82")
 
@@ -359,6 +366,19 @@ offset_left = 52.0
 offset_top = 87.0
 offset_right = 185.0
 offset_bottom = 144.0
+theme_override_colors/search_result_color = Color(1, 1, 1, 1)
+theme_override_colors/search_result_border_color = Color(1, 1, 1, 0.4)
+theme_override_colors/caret_color = Color(1, 1, 1, 1)
+theme_override_colors/caret_background_color = Color(1, 1, 1, 1)
+theme_override_colors/font_selected_color = Color(1, 1, 1, 0)
+theme_override_colors/selection_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_readonly_color = Color(9.901069, 9.901069, 9.901069, 0.5019608)
+theme_override_colors/font_placeholder_color = Color(1, 1, 1, 0.6)
+theme_override_colors/font_outline_color = Color(9.901069, 9.901069, 9.901069, 1)
+theme_override_colors/background_color = Color(9.901069, 9.901069, 9.901069, 0)
+theme_override_colors/current_line_color = Color(1, 1, 1, 0.8)
+theme_override_colors/word_highlighted_color = Color(1, 1, 1, 0.2509804)
 editable = false
 
 [node name="kWhParAnLabel" type="Label" parent="Control/ZoneGris2/ConsommationPanel" unique_id=557374151]
@@ -430,6 +450,22 @@ offset_top = 106.0
 offset_right = 221.0
 offset_bottom = 129.0
 text = "$ / an"
+
+[node name="VueCoupeePanel" type="Panel" parent="Control" unique_id=487003006]
+layout_mode = 0
+offset_left = 440.0
+offset_top = 842.0
+offset_right = 564.0
+offset_bottom = 882.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_crdol")
+
+[node name="VueCoupeeButton" type="CheckBox" parent="Control/VueCoupeePanel" unique_id=994933509]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 4.0
+offset_right = 153.0
+offset_bottom = 35.0
+text = "Vue coupée"
 
 [node name="Therm" type="Sprite2D" parent="." unique_id=1874937732]
 position = Vector2(217.59372, 819.3906)

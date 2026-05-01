@@ -1,7 +1,0 @@
-res://FlaskConnector.gd
-res://node_3d.tscn
-res://Building3D.gd
-res://Main.gd
-res://MainMenu.gd
-res://ResultsPanel.gd
-res://SimulationController.gd
