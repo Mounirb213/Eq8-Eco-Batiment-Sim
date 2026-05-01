@@ -16,10 +16,6 @@ def health():
 
 
 def lire_temperature_interieure(data):
-    """
-    Lit la température intérieure envoyée par Godot.
-    temp_interieur_c pour compatibilité.
-    """
     valeur = data.get("temperature_interieure", data.get("temp_interieur_c", 21.0))
 
     try:
@@ -28,15 +24,9 @@ def lire_temperature_interieure(data):
         return 21.0
 
 def lire_type_chauffage(data):
-    """
-    Lit le type de chauffage.
-    """
     return str(data.get("type_chauffage", "chauffage_electrique")).strip().lower()
 
 def lire_heures_chauffage_par_an(data):
-    """
-    Lit le nombre d'heures de chauffage par année.
-    """
     valeur = data.get("heures_chauffage_par_an", 4320)
 
     try:
@@ -45,10 +35,6 @@ def lire_heures_chauffage_par_an(data):
         return 4320
 
 def lire_date_meteo(data):
-    """
-    Lit la date pour la météo.
-    S'il n'y a rien, on utilise la météo actuelle.
-    """
     date = data.get("date", "current")
 
     if date is None:
@@ -62,9 +48,6 @@ def lire_date_meteo(data):
     return date
 
 def lire_composantes(data):
-    """
-    Lit les composantes reçues de Godot.
-    """
     if isinstance(data, list):
         return data
 
@@ -76,9 +59,6 @@ def lire_composantes(data):
     return []
 
 def obtenir_temperature_exterieure(date):
-    """
-    Retourne la température extérieure selon la date demandée.
-    """
     if date == "current":
         return meteo_service.temperature_actuelle()
 
@@ -87,11 +67,10 @@ def obtenir_temperature_exterieure(date):
 
 def copier_composantes_avec_isolation(composantes, isolation_type):
     """
-    Crée une copie des composantes avec un type d'isolation imposé.
+    Crée une copie des composantes et force un type d'isolation.
 
-    Ça permet de comparer :
-    - isolation choisie par l'utilisateur
-    - isolation moyenne de référence
+    Exemple :
+    - toutes les composantes deviennent isolation_type = "moyenne"
     """
     composantes_copiees = copy.deepcopy(composantes)
 
@@ -101,7 +80,7 @@ def copier_composantes_avec_isolation(composantes, isolation_type):
     return composantes_copiees
 
 
-def calculer_resultats_simulation(
+def calculer_simulation_complete(
     composantes,
     temperature_interieure,
     temperature_exterieure,
@@ -109,8 +88,10 @@ def calculer_resultats_simulation(
     heures_chauffage_par_an
 ):
     """
-    Calcule les résultats thermiques et les résultats de coût
-    pour une liste de composantes.
+    Calcule :
+    - le bâtiment
+    - les pertes thermiques
+    - le coût annuel
     """
     batiment = Batiment(composantes)
 
@@ -133,21 +114,21 @@ def calculer_resultats_simulation(
     return batiment, resultats_thermiques, resultats_cout
 
 
-def calculer_economies_par_rapport_moyenne(resultats_cout_actuels, resultats_cout_moyenne):
+def calculer_economies_annuelles(resultats_cout_actuel, resultats_cout_reference):
     """
-    Calcule les économies par rapport à une référence moyenne.
-
     Formule :
     économies = coût moyen de référence - coût actuel
 
-    Donc :
-    - si le coût actuel est plus bas que la moyenne, économies positives
-    - si le coût actuel est plus haut que la moyenne, économies négatives
-    """
-    cout_actuel = resultats_cout_actuels.get("cout_annuel", 0.0)
-    cout_moyen = resultats_cout_moyenne.get("cout_annuel", 0.0)
+    Si coût actuel > coût moyen :
+        économies négatives
 
-    economies = cout_moyen - cout_actuel
+    Si coût actuel < coût moyen :
+        économies positives
+    """
+    cout_actuel = resultats_cout_actuel.get("cout_annuel", 0.0)
+    cout_reference = resultats_cout_reference.get("cout_annuel", 0.0)
+
+    economies = cout_reference - cout_actuel
 
     return round(economies, 2)
 
@@ -176,8 +157,8 @@ def simulate():
 
         temperature_exterieure = obtenir_temperature_exterieure(date_meteo)
 
-        # Simulation avec l'isolation choisie par l'utilisateur
-        batiment, resultats_thermiques, resultats_cout = calculer_resultats_simulation(
+        # 1. Simulation actuelle avec l'isolation choisie dans Godot
+        batiment, resultats_thermiques, resultats_cout = calculer_simulation_complete(
             composantes=composantes_recues,
             temperature_interieure=temperature_interieure,
             temperature_exterieure=temperature_exterieure,
@@ -185,23 +166,24 @@ def simulate():
             heures_chauffage_par_an=heures_chauffage_par_an
         )
 
-        # Simulation de référence avec isolation moyenne
-        composantes_moyennes = copier_composantes_avec_isolation(
+        # 2. Simulation de référence avec isolation moyenne
+        composantes_reference = copier_composantes_avec_isolation(
             composantes=composantes_recues,
             isolation_type="moyenne"
         )
 
-        batiment_moyen, resultats_thermiques_moyens, resultats_cout_moyens = calculer_resultats_simulation(
-            composantes=composantes_moyennes,
+        batiment_reference, resultats_thermiques_reference, resultats_cout_reference = calculer_simulation_complete(
+            composantes=composantes_reference,
             temperature_interieure=temperature_interieure,
             temperature_exterieure=temperature_exterieure,
             type_chauffage=type_chauffage,
             heures_chauffage_par_an=heures_chauffage_par_an
         )
 
-        economies_annuelles = calculer_economies_par_rapport_moyenne(
-            resultats_cout_actuels=resultats_cout,
-            resultats_cout_moyenne=resultats_cout_moyens
+        # 3. Économies par rapport au coût moyen de référence
+        economies_annuelles = calculer_economies_annuelles(
+            resultats_cout_actuel=resultats_cout,
+            resultats_cout_reference=resultats_cout_reference
         )
 
         resultats_cout["economies_annuelles"] = economies_annuelles
@@ -219,10 +201,10 @@ def simulate():
             "resultats_thermiques": resultats_thermiques,
             "resultats_cout": resultats_cout,
             "reference_moyenne": {
-                "description": "Référence basée sur le même bâtiment avec une isolation moyenne.",
+                "description": "Même bâtiment avec une isolation moyenne.",
                 "isolation_type": "moyenne",
-                "resultats_thermiques": resultats_thermiques_moyens,
-                "resultats_cout": resultats_cout_moyens
+                "resultats_thermiques": resultats_thermiques_reference,
+                "resultats_cout": resultats_cout_reference
             }
         }
 
