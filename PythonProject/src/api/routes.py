@@ -1,3 +1,5 @@
+import copy
+
 from flask import Blueprint, jsonify, request
 
 from models.Batiment import Batiment
@@ -45,7 +47,7 @@ def lire_heures_chauffage_par_an(data):
 def lire_date_meteo(data):
     """
     Lit la date pour la météo.
-    Si il n'y a rien, météo actuelle.
+    S'il n'y a rien, on utilise la météo actuelle.
     """
     date = data.get("date", "current")
 
@@ -62,7 +64,6 @@ def lire_date_meteo(data):
 def lire_composantes(data):
     """
     Lit les composantes reçues de Godot.
-    Listes JSON
     """
     if isinstance(data, list):
         return data
@@ -83,6 +84,72 @@ def obtenir_temperature_exterieure(date):
 
     return meteo_service.temperature_historique(date)
 
+
+def copier_composantes_avec_isolation(composantes, isolation_type):
+    """
+    Crée une copie des composantes avec un type d'isolation imposé.
+
+    Ça permet de comparer :
+    - isolation choisie par l'utilisateur
+    - isolation moyenne de référence
+    """
+    composantes_copiees = copy.deepcopy(composantes)
+
+    for composante in composantes_copiees:
+        composante["isolation_type"] = isolation_type
+
+    return composantes_copiees
+
+
+def calculer_resultats_simulation(
+    composantes,
+    temperature_interieure,
+    temperature_exterieure,
+    type_chauffage,
+    heures_chauffage_par_an
+):
+    """
+    Calcule les résultats thermiques et les résultats de coût
+    pour une liste de composantes.
+    """
+    batiment = Batiment(composantes)
+
+    calcul_thermique = CalculThermique(
+        batiment=batiment,
+        temperature_interieure=temperature_interieure,
+        temperature_exterieure=temperature_exterieure
+    )
+
+    resultats_thermiques = calcul_thermique.calculer()
+
+    calcul_cout = CalculCout(
+        perte_totale_watts=resultats_thermiques["total"],
+        type_chauffage=type_chauffage,
+        heures_chauffage_par_an=heures_chauffage_par_an
+    )
+
+    resultats_cout = calcul_cout.calculer_resultats()
+
+    return batiment, resultats_thermiques, resultats_cout
+
+
+def calculer_economies_par_rapport_moyenne(resultats_cout_actuels, resultats_cout_moyenne):
+    """
+    Calcule les économies par rapport à une référence moyenne.
+
+    Formule :
+    économies = coût moyen de référence - coût actuel
+
+    Donc :
+    - si le coût actuel est plus bas que la moyenne, économies positives
+    - si le coût actuel est plus haut que la moyenne, économies négatives
+    """
+    cout_actuel = resultats_cout_actuels.get("cout_annuel", 0.0)
+    cout_moyen = resultats_cout_moyenne.get("cout_annuel", 0.0)
+
+    economies = cout_moyen - cout_actuel
+
+    return round(economies, 2)
 
 
 @api_routes.post("/simulate")
@@ -109,23 +176,35 @@ def simulate():
 
         temperature_exterieure = obtenir_temperature_exterieure(date_meteo)
 
-        batiment = Batiment(composantes_recues)
-
-        calcul_thermique = CalculThermique(
-            batiment=batiment,
+        # Simulation avec l'isolation choisie par l'utilisateur
+        batiment, resultats_thermiques, resultats_cout = calculer_resultats_simulation(
+            composantes=composantes_recues,
             temperature_interieure=temperature_interieure,
-            temperature_exterieure=temperature_exterieure
-        )
-
-        resultats_thermiques = calcul_thermique.calculer()
-
-        calcul_cout = CalculCout(
-            perte_totale_watts=resultats_thermiques["total"],
+            temperature_exterieure=temperature_exterieure,
             type_chauffage=type_chauffage,
             heures_chauffage_par_an=heures_chauffage_par_an
         )
 
-        resultats_cout = calcul_cout.calculer_resultats()
+        # Simulation de référence avec isolation moyenne
+        composantes_moyennes = copier_composantes_avec_isolation(
+            composantes=composantes_recues,
+            isolation_type="moyenne"
+        )
+
+        batiment_moyen, resultats_thermiques_moyens, resultats_cout_moyens = calculer_resultats_simulation(
+            composantes=composantes_moyennes,
+            temperature_interieure=temperature_interieure,
+            temperature_exterieure=temperature_exterieure,
+            type_chauffage=type_chauffage,
+            heures_chauffage_par_an=heures_chauffage_par_an
+        )
+
+        economies_annuelles = calculer_economies_par_rapport_moyenne(
+            resultats_cout_actuels=resultats_cout,
+            resultats_cout_moyenne=resultats_cout_moyens
+        )
+
+        resultats_cout["economies_annuelles"] = economies_annuelles
 
         reponse = {
             "message": "Simulation terminee avec succes",
@@ -138,7 +217,13 @@ def simulate():
                 "heures_chauffage_par_an": heures_chauffage_par_an
             },
             "resultats_thermiques": resultats_thermiques,
-            "resultats_cout": resultats_cout
+            "resultats_cout": resultats_cout,
+            "reference_moyenne": {
+                "description": "Référence basée sur le même bâtiment avec une isolation moyenne.",
+                "isolation_type": "moyenne",
+                "resultats_thermiques": resultats_thermiques_moyens,
+                "resultats_cout": resultats_cout_moyens
+            }
         }
 
         return jsonify(reponse), 200

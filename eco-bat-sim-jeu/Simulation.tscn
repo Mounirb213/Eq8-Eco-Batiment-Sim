@@ -366,19 +366,6 @@ offset_left = 52.0
 offset_top = 87.0
 offset_right = 185.0
 offset_bottom = 144.0
-theme_override_colors/search_result_color = Color(1, 1, 1, 1)
-theme_override_colors/search_result_border_color = Color(1, 1, 1, 0.4)
-theme_override_colors/caret_color = Color(1, 1, 1, 1)
-theme_override_colors/caret_background_color = Color(1, 1, 1, 1)
-theme_override_colors/font_selected_color = Color(1, 1, 1, 0)
-theme_override_colors/selection_color = Color(1, 1, 1, 1)
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_readonly_color = Color(9.901069, 9.901069, 9.901069, 0.5019608)
-theme_override_colors/font_placeholder_color = Color(1, 1, 1, 0.6)
-theme_override_colors/font_outline_color = Color(9.901069, 9.901069, 9.901069, 1)
-theme_override_colors/background_color = Color(9.901069, 9.901069, 9.901069, 0)
-theme_override_colors/current_line_color = Color(1, 1, 1, 0.8)
-theme_override_colors/word_highlighted_color = Color(1, 1, 1, 0.2509804)
 editable = false
 
 [node name="kWhParAnLabel" type="Label" parent="Control/ZoneGris2/ConsommationPanel" unique_id=557374151]
