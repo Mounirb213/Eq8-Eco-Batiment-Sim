@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://c8xejh7l56f6p" path="res://MainMenu.gd" id="3_uobxk"]
 [ext_resource type="Script" uid="uid://dip15ect7u7bp" path="res://FlaskConnector.gd" id="5_mpm82"]
 [ext_resource type="Script" uid="uid://dwahjr5806l2u" path="res://ResultsPanel.gd" id="5_vtp77"]
+[ext_resource type="PackedScene" uid="uid://dxhhy5kspeb0p" path="res://maisonCoupee.glb" id="8_qdflh"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_43spk"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -73,8 +74,8 @@ corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qdflh"]
-bg_color = Color(0.34117648, 0.41960785, 0.6, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_w5m0l"]
+bg_color = Color(0.04948897, 0.04948897, 0.04948897, 0.44313726)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
@@ -82,6 +83,13 @@ corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_crdol"]
 bg_color = Color(0, 0, 0, 0.3137255)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qdflh"]
+bg_color = Color(0.34117648, 0.41960785, 0.6, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
@@ -237,9 +245,9 @@ popup/item_3/id = 3
 
 [node name="DatePanel" type="Panel" parent="Control/ZoneGris1" unique_id=869901144]
 layout_mode = 0
-offset_left = 128.0
+offset_left = 121.0
 offset_top = 286.0
-offset_right = 298.0
+offset_right = 291.0
 offset_bottom = 326.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_lfd1m")
 
@@ -317,6 +325,53 @@ offset_right = 292.0
 offset_bottom = 563.0
 text = " Thermographie"
 
+[node name="TempInt_Ext" type="Panel" parent="Control/ZoneGris1" unique_id=2036865835]
+layout_mode = 0
+offset_left = 439.0
+offset_top = 754.0
+offset_right = 582.0
+offset_bottom = 823.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_w5m0l")
+
+[node name="TempIntAvec21Label" type="Label" parent="Control/ZoneGris1/TempInt_Ext" unique_id=304625473]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 50.0
+offset_bottom = 33.0
+text = "Temp. int. : 21°C"
+
+[node name="TempExtLabel" type="Label" parent="Control/ZoneGris1/TempInt_Ext" unique_id=20207074]
+layout_mode = 0
+offset_left = 11.0
+offset_top = 35.0
+offset_right = 97.0
+offset_bottom = 58.0
+text = "Temp. ext. :"
+
+[node name="TempExtRepLabel" type="Label" parent="Control/ZoneGris1/TempInt_Ext" unique_id=863171097]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 35.0
+offset_right = 140.0
+offset_bottom = 58.0
+
+[node name="VueCoupeePanel" type="Panel" parent="Control/ZoneGris1" unique_id=487003006]
+layout_mode = 0
+offset_left = 439.0
+offset_top = 841.0
+offset_right = 563.0
+offset_bottom = 881.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_crdol")
+
+[node name="VueCoupeeCheckButton" type="CheckBox" parent="Control/ZoneGris1/VueCoupeePanel" unique_id=994933509]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 4.0
+offset_right = 153.0
+offset_bottom = 35.0
+text = "Vue coupée"
+
 [node name="ZoneGris2" type="ColorRect" parent="Control" unique_id=1478119359]
 layout_mode = 0
 offset_left = 422.0
@@ -325,9 +380,9 @@ offset_right = 1920.0
 offset_bottom = 1081.0
 color = Color(0, 0, 0, 0.3137255)
 script = ExtResource("5_vtp77")
-consommation_affichage_path = NodePath("ConsommationPanel/ConsommationTextEdit")
-cout_affichage_path = NodePath("CoutAnnuelPanel/CoutAnnuelTextEdit")
-economies_affichage_path = NodePath("EconomiesPanel/CoutAnnuelTextEdit")
+consommation_affichage_path = NodePath("ConsommationPanel/ConsommationTextLabel")
+cout_affichage_path = NodePath("CoutAnnuelPanel/CoutAnnuelTextLabel")
+economies_affichage_path = NodePath("EconomiesPanel/EconomiesTextLabel")
 
 [node name="ResultatsPanel" type="Panel" parent="Control/ZoneGris2" unique_id=1085520380]
 layout_mode = 0
@@ -376,6 +431,15 @@ offset_right = 262.0
 offset_bottom = 128.0
 text = "kWh / an"
 
+[node name="ConsommationTextLabel" type="Label" parent="Control/ZoneGris2/ConsommationPanel" unique_id=834586294]
+layout_mode = 0
+offset_left = 57.0
+offset_top = 92.0
+offset_right = 181.0
+offset_bottom = 139.0
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="CoutAnnuelPanel" type="Panel" parent="Control/ZoneGris2" unique_id=1948375252]
 layout_mode = 0
 offset_left = 788.0
@@ -407,6 +471,15 @@ offset_right = 221.0
 offset_bottom = 129.0
 text = "$ / an"
 
+[node name="CoutAnnuelTextLabel" type="Label" parent="Control/ZoneGris2/CoutAnnuelPanel" unique_id=295869369]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 92.0
+offset_right = 140.0
+offset_bottom = 140.0
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="EconomiesPanel" type="Panel" parent="Control/ZoneGris2" unique_id=2129825420]
 layout_mode = 0
 offset_left = 1038.0
@@ -414,7 +487,7 @@ offset_top = 26.0
 offset_right = 1214.0
 offset_bottom = 76.0
 
-[node name="CoutAnnuelLabel" type="Label" parent="Control/ZoneGris2/EconomiesPanel" unique_id=1832724819]
+[node name="EconomiesLabel" type="Label" parent="Control/ZoneGris2/EconomiesPanel" unique_id=1832724819]
 layout_mode = 0
 offset_left = 43.0
 offset_top = 13.0
@@ -422,7 +495,7 @@ offset_right = 130.0
 offset_bottom = 36.0
 text = "Économies"
 
-[node name="CoutAnnuelTextEdit" type="TextEdit" parent="Control/ZoneGris2/EconomiesPanel" unique_id=1099723618]
+[node name="EconomiesTextEdit" type="TextEdit" parent="Control/ZoneGris2/EconomiesPanel" unique_id=1099723618]
 layout_mode = 0
 offset_left = 11.0
 offset_top = 88.0
@@ -438,21 +511,14 @@ offset_right = 221.0
 offset_bottom = 129.0
 text = "$ / an"
 
-[node name="VueCoupeePanel" type="Panel" parent="Control" unique_id=487003006]
+[node name="EconomiesTextLabel" type="Label" parent="Control/ZoneGris2/EconomiesPanel" unique_id=287252679]
 layout_mode = 0
-offset_left = 440.0
-offset_top = 842.0
-offset_right = 564.0
-offset_bottom = 882.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_crdol")
-
-[node name="VueCoupeeButton" type="CheckBox" parent="Control/VueCoupeePanel" unique_id=994933509]
-layout_mode = 0
-offset_left = 1.0
-offset_top = 4.0
-offset_right = 153.0
-offset_bottom = 35.0
-text = "Vue coupée"
+offset_left = 14.0
+offset_top = 92.0
+offset_right = 141.0
+offset_bottom = 140.0
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Therm" type="Sprite2D" parent="." unique_id=1874937732]
 position = Vector2(217.59372, 819.3906)
@@ -463,3 +529,7 @@ texture = ExtResource("2_1gfko")
 script = ExtResource("5_mpm82")
 
 [node name="SimulationController" type="Node" parent="." unique_id=381123888]
+
+[node name="maisonCoupee" parent="." unique_id=1524043376 instance=ExtResource("8_qdflh")]
+visible = false
+script = ExtResource("2_t6gs0")

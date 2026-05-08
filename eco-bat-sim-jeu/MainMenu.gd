@@ -3,6 +3,7 @@ class_name MainMenu
 
 signal simulation_demandee(parametres)
 signal thermographie_changee(active)
+signal vue_coupee_changee(active)
 
 @export var temperature_interieure_par_defaut: float = 21.0
 @export var heures_chauffage_par_an: float = 4320.0
@@ -18,6 +19,8 @@ signal thermographie_changee(active)
 
 @onready var thermo_check_button: CheckBox = $ThermoCheckButton
 @onready var go_button: Button = $GoButton
+
+@onready var vue_coupee_check_button: CheckBox = $VueCoupeeCheckButton
 
 
 func _ready():
@@ -46,6 +49,8 @@ func connecter_signaux():
 	date_jour_box.value_changed.connect(_on_date_modifiee)
 	date_mois_box.value_changed.connect(_on_date_modifiee)
 	date_annee_box.value_changed.connect(_on_date_modifiee)
+	
+	vue_coupee_check_button.toggled.connect(_on_vue_coupee_check_button_toggled)
 
 
 func _on_go_button_pressed():
@@ -68,6 +73,9 @@ func _on_parametre_modifie(index):
 
 func _on_date_modifiee(value):
 	desactiver_thermographie_si_active()
+	
+func _on_vue_coupee_check_button_toggled(active):
+	vue_coupee_changee.emit(active)
 
 
 func desactiver_thermographie_si_active():
@@ -92,7 +100,8 @@ func lire_parametres() -> Dictionary:
 		"date": lire_date_meteo(),
 		"thermographie_active": lire_thermographie_active(),
 		"isolation_type": lire_isolation_type(),
-		"nb_occupants": lire_nombre_occupants()
+		"nb_occupants": lire_nombre_occupants(),
+		"vue_coupee_active": lire_vue_coupee_active()
 	}
 
 
@@ -212,3 +221,6 @@ func lire_date_meteo() -> String:
 
 func lire_thermographie_active() -> bool:
 	return thermo_check_button.button_pressed
+
+func lire_vue_coupee_active() -> bool:
+	return vue_coupee_check_button.button_pressed
