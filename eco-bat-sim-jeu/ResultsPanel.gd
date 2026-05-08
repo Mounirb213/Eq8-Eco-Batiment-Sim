@@ -33,7 +33,7 @@ func afficher_valeurs_par_defaut():
 	ecrire_dans_noeud(economies_affichage, "0")
 
 	if temp_ext_rep_label != null:
-		temp_ext_rep_label.text = "0"
+		temp_ext_rep_label.text = "0 °C"
 
 
 func afficher_resultats(resultat_flask: Dictionary):
@@ -51,7 +51,7 @@ func afficher_resultats(resultat_flask: Dictionary):
 	ecrire_dans_noeud(economies_affichage, formater_nombre(economies))
 
 	if temp_ext_rep_label != null:
-		temp_ext_rep_label.text = formater_nombre(temperature_exterieure)
+		temp_ext_rep_label.text = str(round(temperature_exterieure)) + " °C"
 
 
 func afficher_erreur(message: String):

@@ -182,6 +182,11 @@ func appliquer_thermographie_depuis_resultat(resultat: Dictionary):
 		return
 
 	var thermographie = resultats_thermiques["thermographie"]
+	
+	var pertes_par_composant = {}
+
+	if resultats_thermiques.has("pertes_par_composant"):
+		pertes_par_composant = resultats_thermiques["pertes_par_composant"]
 
 	var temperature_interieure = 21.0
 	var temperature_exterieure = 0.0
@@ -196,11 +201,12 @@ func appliquer_thermographie_depuis_resultat(resultat: Dictionary):
 			temperature_exterieure = float(conditions["temperature_exterieure"])
 
 	var modele_visible = obtenir_modele_visible()
-
+	
 	modele_visible.appliquer_thermographie(
-		thermographie,
-		temperature_interieure,
-		temperature_exterieure
+	thermographie,
+	temperature_interieure,
+	temperature_exterieure,
+	pertes_par_composant
 	)
 
 	print("Thermographie appliquée sur le modèle visible.")

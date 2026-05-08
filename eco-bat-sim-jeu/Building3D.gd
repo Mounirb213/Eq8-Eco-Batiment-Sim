@@ -8,6 +8,9 @@ class_name Building3D
 @export var corriger_surface_automatique: bool = true
 @export var seuil_surface_trop_grande: float = 20.0
 @export var facteur_surface_trop_grande: float = 0.03
+@export var utiliser_pertes_pour_thermographie: bool = true
+@export var intensite_pertes_thermographie: float = 12.0
+@export var intensite_variation_thermographie: float = 2.5
 
 var noeuds_maillages: Array = []
 var materiaux_originaux: Dictionary = {}
@@ -280,23 +283,35 @@ func calculer_aire_triangle(a: Vector3, b: Vector3, c: Vector3) -> float:
 func appliquer_thermographie(
 	thermographie: Dictionary,
 	temperature_interieure_par_defaut = null,
-	temperature_exterieure_par_defaut = null
+	temperature_exterieure_par_defaut = null,
+	pertes_par_composant: Dictionary = {}
 ):
 	if noeuds_maillages.is_empty():
 		actualiser_liste_maillages()
 
+	var perte_max = trouver_perte_max(pertes_par_composant)
+
 	for noeud in noeuds_maillages:
-		var temperature = trouver_temperature_pour_noeud(
+		var temperature_base = trouver_temperature_pour_noeud(
 			noeud,
 			thermographie,
 			temperature_interieure_par_defaut,
 			temperature_exterieure_par_defaut
 		)
 
-		if temperature == null:
+		if temperature_base == null:
 			continue
 
-		var couleur = convertir_temperature_en_couleur(float(temperature))
+		var temperature_visuelle = calculer_temperature_visuelle(
+			noeud,
+			float(temperature_base),
+			pertes_par_composant,
+			perte_max
+		)
+
+		var couleur = convertir_temperature_en_couleur(temperature_visuelle)
+		couleur = appliquer_effet_shade_sur_couleur(noeud, couleur)
+
 		appliquer_couleur_sur_noeud(noeud, couleur)
 
 
@@ -335,6 +350,88 @@ func trouver_temperature_pour_noeud(
 		return temperature_exterieure_par_defaut
 
 	return null
+	
+func trouver_perte_max(pertes_par_composant: Dictionary) -> float:
+	var perte_max = 0.0
+
+	for nom_composant in pertes_par_composant.keys():
+		var perte = float(pertes_par_composant[nom_composant])
+
+		if perte > perte_max:
+			perte_max = perte
+
+	return perte_max
+
+
+func calculer_temperature_visuelle(
+	noeud: MeshInstance3D,
+	temperature_base: float,
+	pertes_par_composant: Dictionary,
+	perte_max: float
+) -> float:
+	var temperature_visuelle = temperature_base
+
+	if utiliser_pertes_pour_thermographie:
+		var perte_noeud = obtenir_perte_du_noeud(noeud, pertes_par_composant)
+
+		if perte_max > 0:
+			var ratio_perte = perte_noeud / perte_max
+			ratio_perte = clamp(ratio_perte, 0.0, 1.0)
+
+			var infos_nom = analyser_nom_composant(noeud.name)
+			var face = infos_nom["face"]
+
+			if utiliser_metadonnees and noeud.has_meta("face"):
+				face = str(noeud.get_meta("face")).to_lower()
+
+			if face == "ext":
+				temperature_visuelle += ratio_perte * intensite_pertes_thermographie
+
+			if face == "int":
+				temperature_visuelle += ratio_perte * 3.0
+
+	var variation = calculer_variation_selon_nom(noeud.name)
+	temperature_visuelle += variation * intensite_variation_thermographie
+
+	return temperature_visuelle
+
+
+func obtenir_perte_du_noeud(noeud: MeshInstance3D, pertes_par_composant: Dictionary) -> float:
+	var nom_noeud = str(noeud.name)
+
+	if pertes_par_composant.has(nom_noeud):
+		return float(pertes_par_composant[nom_noeud])
+
+	return 0.0
+
+
+func calculer_variation_selon_nom(nom: String) -> float:
+	"""
+	Retourne une petite variation stable entre -1 et 1.
+	Chaque mesh aura toujours la même variation selon son nom.
+	Ça évite une thermographie trop uniforme.
+	"""
+	var total = 0
+
+	for i in range(nom.length()):
+		total += nom.unicode_at(i) * (i + 1)
+
+	var valeur = float(total % 1000) / 1000.0
+
+	return valeur * 2.0 - 1.0
+
+
+func appliquer_effet_shade_sur_couleur(noeud: MeshInstance3D, couleur: Color) -> Color:
+	"""
+	Ajoute un léger effet shade à la couleur.
+	Cela rend la thermographie moins plate visuellement.
+	"""
+	var variation = calculer_variation_selon_nom(noeud.name)
+
+	if variation > 0:
+		return couleur.lerp(Color(1.0, 1.0, 1.0), variation * 0.12)
+
+	return couleur.lerp(Color(0.0, 0.0, 0.0), abs(variation) * 0.12)
 
 
 func convertir_temperature_en_couleur(temperature: float) -> Color:
