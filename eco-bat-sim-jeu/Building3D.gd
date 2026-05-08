@@ -1,6 +1,8 @@
 extends Node3D
 class_name Building3D
 
+const THERMAL_SHADER = preload("res://shaders/thermal_shader.gdshader")
+
 @export var isolation_par_defaut: String = "moyenne"
 @export var temperature_min_couleur: float = -15.0
 @export var temperature_max_couleur: float = 30.0
@@ -11,6 +13,10 @@ class_name Building3D
 @export var utiliser_pertes_pour_thermographie: bool = true
 @export var intensite_pertes_thermographie: float = 12.0
 @export var intensite_variation_thermographie: float = 2.5
+@export var utiliser_shader_thermique: bool = true
+@export var force_bruit_thermique: float = 0.14
+@export var force_shade_thermique: float = 0.18
+@export var force_emission_thermique: float = 0.65
 
 var noeuds_maillages: Array = []
 var materiaux_originaux: Dictionary = {}
@@ -216,7 +222,7 @@ func joindre_parties_avec_underscore(parties: Array) -> String:
 
 	return resultat
 
-
+	
 # --------------------------------------------------
 # CALCUL DE SURFACE
 # --------------------------------------------------
@@ -309,10 +315,12 @@ func appliquer_thermographie(
 			perte_max
 		)
 
-		var couleur = convertir_temperature_en_couleur(temperature_visuelle)
-		couleur = appliquer_effet_shade_sur_couleur(noeud, couleur)
-
-		appliquer_couleur_sur_noeud(noeud, couleur)
+		if utiliser_shader_thermique:
+			appliquer_shader_thermique_sur_noeud(noeud, temperature_visuelle)
+		else:
+			var couleur = convertir_temperature_en_couleur(temperature_visuelle)
+			couleur = appliquer_effet_shade_sur_couleur(noeud, couleur)
+			appliquer_couleur_sur_noeud(noeud, couleur)
 
 
 func trouver_temperature_pour_noeud(
@@ -369,32 +377,54 @@ func calculer_temperature_visuelle(
 	pertes_par_composant: Dictionary,
 	perte_max: float
 ) -> float:
+	var infos_nom = analyser_nom_composant(noeud.name)
+	var face = infos_nom["face"]
+	var type_composant = infos_nom["type_composant"]
+
+	if utiliser_metadonnees and noeud.has_meta("face"):
+		face = str(noeud.get_meta("face")).to_lower()
+
+	if utiliser_metadonnees and noeud.has_meta("type_composant"):
+		type_composant = str(noeud.get_meta("type_composant")).to_lower()
+
+	var perte_noeud = obtenir_perte_du_noeud(noeud, pertes_par_composant)
+	var ratio_perte = 0.0
+
+	if perte_max > 0:
+		ratio_perte = perte_noeud / perte_max
+		ratio_perte = clamp(ratio_perte, 0.0, 1.0)
+
 	var temperature_visuelle = temperature_base
 
-	if utiliser_pertes_pour_thermographie:
-		var perte_noeud = obtenir_perte_du_noeud(noeud, pertes_par_composant)
+	if face == "ext":
+		# On refroidit visuellement l'extérieur pour éviter que tout devienne jaune.
+		temperature_visuelle = temperature_base - 6.0
 
-		if perte_max > 0:
-			var ratio_perte = perte_noeud / perte_max
-			ratio_perte = clamp(ratio_perte, 0.0, 1.0)
+		# Les composants avec plus de pertes deviennent plus chauds.
+		temperature_visuelle += ratio_perte * intensite_pertes_thermographie
 
-			var infos_nom = analyser_nom_composant(noeud.name)
-			var face = infos_nom["face"]
+	elif face == "int":
+		# L'intérieur reste chaud, mais pas forcément rouge partout.
+		temperature_visuelle = temperature_base - 2.0
+		temperature_visuelle += ratio_perte * 3.0
 
-			if utiliser_metadonnees and noeud.has_meta("face"):
-				face = str(noeud.get_meta("face")).to_lower()
+	# Ajustements par type pour éviter des effets trop extrêmes.
+	if type_composant == "toit":
+		temperature_visuelle -= 2.0
 
-			if face == "ext":
-				temperature_visuelle += ratio_perte * intensite_pertes_thermographie
+	if type_composant == "sol":
+		temperature_visuelle -= 3.0
 
-			if face == "int":
-				temperature_visuelle += ratio_perte * 3.0
+	if type_composant == "fenetre":
+		temperature_visuelle += ratio_perte * 2.0
+
+	if type_composant == "porte":
+		temperature_visuelle += ratio_perte * 1.5
 
 	var variation = calculer_variation_selon_nom(noeud.name)
 	temperature_visuelle += variation * intensite_variation_thermographie
 
 	return temperature_visuelle
-
 
 func obtenir_perte_du_noeud(noeud: MeshInstance3D, pertes_par_composant: Dictionary) -> float:
 	var nom_noeud = str(noeud.name)
@@ -506,7 +536,32 @@ func reinitialiser_thermographie():
 		for surface_index in range(noeud.mesh.get_surface_count()):
 			if surface_index < liste_materiaux.size():
 				noeud.set_surface_override_material(surface_index, liste_materiaux[surface_index])
+		
+func appliquer_shader_thermique_sur_noeud(noeud: MeshInstance3D, temperature_visuelle: float):
+	if noeud.mesh == null:
+		return
 
+	enregistrer_materiaux_originaux(noeud)
+
+	var ratio_temperature = inverse_lerp(
+		temperature_min_couleur,
+		temperature_max_couleur,
+		temperature_visuelle
+	)
+
+	ratio_temperature = clamp(ratio_temperature, 0.0, 1.0)
+
+	for surface_index in range(noeud.mesh.get_surface_count()):
+		var materiau = ShaderMaterial.new()
+
+		materiau.shader = THERMAL_SHADER
+
+		materiau.set_shader_parameter("temperature_ratio", ratio_temperature)
+		materiau.set_shader_parameter("noise_strength", force_bruit_thermique)
+		materiau.set_shader_parameter("shade_strength", force_shade_thermique)
+		materiau.set_shader_parameter("emission_strength", force_emission_thermique)
+
+		noeud.set_surface_override_material(surface_index, materiau)
 
 # --------------------------------------------------
 # OUTILS
