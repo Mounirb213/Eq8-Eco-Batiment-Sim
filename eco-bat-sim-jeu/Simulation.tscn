@@ -1,13 +1,14 @@
 [gd_scene format=3 uid="uid://bscf64t74m7w1"]
 
-[ext_resource type="PackedScene" uid="uid://d1trdljoirhex" path="res://maison.glb" id="1_2iqi2"]
 [ext_resource type="Script" uid="uid://br881xuibieeb" path="res://TestSimulationComplete.gd" id="1_mpm82"]
 [ext_resource type="Texture2D" uid="uid://bqe4fd6g78wlq" path="res://Therm.png" id="2_1gfko"]
 [ext_resource type="Script" uid="uid://dffjy84mxski2" path="res://Building3D.gd" id="2_t6gs0"]
 [ext_resource type="Script" uid="uid://c8xejh7l56f6p" path="res://MainMenu.gd" id="3_uobxk"]
 [ext_resource type="Script" uid="uid://dip15ect7u7bp" path="res://FlaskConnector.gd" id="5_mpm82"]
 [ext_resource type="Script" uid="uid://dwahjr5806l2u" path="res://ResultsPanel.gd" id="5_vtp77"]
+[ext_resource type="PackedScene" uid="uid://dul378cvojn8q" path="res://maison1.glb" id="8_crdol"]
 [ext_resource type="PackedScene" uid="uid://dxhhy5kspeb0p" path="res://maisonCoupee.glb" id="8_qdflh"]
+[ext_resource type="Script" uid="uid://xuvod5m1vblu" path="res://maison_1.gd" id="9_w5m0l"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_43spk"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -107,15 +108,6 @@ environment = SubResource("Environment_1gfko")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=257073510]
 transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
 shadow_enabled = true
-
-[node name="maison" parent="." unique_id=326536285 instance=ExtResource("1_2iqi2")]
-script = ExtResource("2_t6gs0")
-temperature_max_couleur = 25.0
-intensite_pertes_thermographie = 10.0
-intensite_variation_thermographie = 0.5
-force_bruit_thermique = 0.04
-force_shade_thermique = 0.08
-force_emission_thermique = 0.45
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=263595434]
 mesh = SubResource("PlaneMesh_1gfko")
@@ -539,6 +531,15 @@ script = ExtResource("5_mpm82")
 [node name="maisonCoupee" parent="." unique_id=1524043376 instance=ExtResource("8_qdflh")]
 visible = false
 script = ExtResource("2_t6gs0")
+temperature_max_couleur = 25.0
+intensite_pertes_thermographie = 10.0
+intensite_variation_thermographie = 0.6
+force_bruit_thermique = 0.04
+force_shade_thermique = 0.08
+force_emission_thermique = 0.45
+
+[node name="maison" parent="." unique_id=1276571287 instance=ExtResource("8_crdol")]
+script = ExtResource("9_w5m0l")
 temperature_max_couleur = 25.0
 intensite_pertes_thermographie = 10.0
 intensite_variation_thermographie = 0.6
