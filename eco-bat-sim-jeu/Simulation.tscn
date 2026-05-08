@@ -25,6 +25,13 @@ glow_enabled = true
 [sub_resource type="PlaneMesh" id="PlaneMesh_1gfko"]
 size = Vector2(1000, 1000)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_crdol"]
+bg_color = Color(0, 0, 0, 0.3137255)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2iqi2"]
 bg_color = Color(0, 0, 0, 0.6666667)
 corner_radius_top_left = 5
@@ -81,13 +88,6 @@ corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_crdol"]
-bg_color = Color(0, 0, 0, 0.3137255)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qdflh"]
 bg_color = Color(0.34117648, 0.41960785, 0.6, 1)
 corner_radius_top_left = 5
@@ -120,6 +120,14 @@ anchor_right = 1.0070001
 anchor_bottom = 0.998
 offset_right = -0.064086914
 offset_bottom = 0.29595947
+
+[node name="VueCoupeePanel" type="Panel" parent="Control" unique_id=487003006]
+layout_mode = 0
+offset_left = 440.0
+offset_top = 842.0
+offset_right = 564.0
+offset_bottom = 882.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_crdol")
 
 [node name="ZoneGris1" type="ColorRect" parent="Control" unique_id=1529115221]
 layout_mode = 0
@@ -349,27 +357,12 @@ offset_right = 97.0
 offset_bottom = 58.0
 text = "Temp. ext. :"
 
-[node name="TempExtRepLabel" type="Label" parent="Control/ZoneGris1/TempInt_Ext" unique_id=863171097]
+[node name="VueCoupeeCheckButton" type="CheckBox" parent="Control/ZoneGris1" unique_id=994933509]
 layout_mode = 0
-offset_left = 100.0
-offset_top = 35.0
-offset_right = 140.0
-offset_bottom = 58.0
-
-[node name="VueCoupeePanel" type="Panel" parent="Control/ZoneGris1" unique_id=487003006]
-layout_mode = 0
-offset_left = 439.0
-offset_top = 841.0
-offset_right = 563.0
-offset_bottom = 881.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_crdol")
-
-[node name="VueCoupeeCheckButton" type="CheckBox" parent="Control/ZoneGris1/VueCoupeePanel" unique_id=994933509]
-layout_mode = 0
-offset_left = 1.0
-offset_top = 4.0
-offset_right = 153.0
-offset_bottom = 35.0
+offset_left = 440.0
+offset_top = 845.0
+offset_right = 592.0
+offset_bottom = 876.0
 text = "Vue coupée"
 
 [node name="ZoneGris2" type="ColorRect" parent="Control" unique_id=1478119359]
@@ -519,6 +512,13 @@ offset_right = 141.0
 offset_bottom = 140.0
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="TempExtRepLabel" type="Label" parent="Control/ZoneGris2" unique_id=863171097]
+layout_mode = 0
+offset_left = 118.0
+offset_top = -99.0
+offset_right = 158.0
+offset_bottom = -76.0
 
 [node name="Therm" type="Sprite2D" parent="." unique_id=1874937732]
 position = Vector2(217.59372, 819.3906)
