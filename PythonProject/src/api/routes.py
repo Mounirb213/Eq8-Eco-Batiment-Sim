@@ -26,6 +26,19 @@ def lire_temperature_interieure(data):
 def lire_type_chauffage(data):
     return str(data.get("type_chauffage", "chauffage_electrique")).strip().lower()
 
+def lire_nb_occupants(data):
+    valeur = data.get("nb_occupants", 1)
+
+    try:
+        valeur = int(valeur)
+    except (TypeError, ValueError):
+        return 1
+
+    if valeur < 1:
+        return 1
+
+    return valeur
+
 def lire_heures_chauffage_par_an(data):
     valeur = data.get("heures_chauffage_par_an", 4320)
 
@@ -85,7 +98,8 @@ def calculer_simulation_complete(
     temperature_interieure,
     temperature_exterieure,
     type_chauffage,
-    heures_chauffage_par_an
+    heures_chauffage_par_an,
+    nb_occupants
 ):
     """
     Calcule :
@@ -106,7 +120,8 @@ def calculer_simulation_complete(
     calcul_cout = CalculCout(
         perte_totale_watts=resultats_thermiques["total"],
         type_chauffage=type_chauffage,
-        heures_chauffage_par_an=heures_chauffage_par_an
+        heures_chauffage_par_an=heures_chauffage_par_an,
+        nb_occupants=nb_occupants
     )
 
     resultats_cout = calcul_cout.calculer_resultats()
@@ -152,6 +167,7 @@ def simulate():
 
         temperature_interieure = lire_temperature_interieure(data)
         type_chauffage = lire_type_chauffage(data)
+        nb_occupants = lire_nb_occupants(data)
         heures_chauffage_par_an = lire_heures_chauffage_par_an(data)
         date_meteo = lire_date_meteo(data)
 
@@ -163,7 +179,8 @@ def simulate():
             temperature_interieure=temperature_interieure,
             temperature_exterieure=temperature_exterieure,
             type_chauffage=type_chauffage,
-            heures_chauffage_par_an=heures_chauffage_par_an
+            heures_chauffage_par_an=heures_chauffage_par_an,
+            nb_occupants=nb_occupants
         )
 
         # 2. Simulation de référence avec isolation moyenne
@@ -177,7 +194,8 @@ def simulate():
             temperature_interieure=temperature_interieure,
             temperature_exterieure=temperature_exterieure,
             type_chauffage=type_chauffage,
-            heures_chauffage_par_an=heures_chauffage_par_an
+            heures_chauffage_par_an=heures_chauffage_par_an,
+            nb_occupants=nb_occupants
         )
 
         # 3. Économies par rapport au coût moyen de référence
@@ -196,6 +214,7 @@ def simulate():
                 "temperature_interieure": temperature_interieure,
                 "temperature_exterieure": temperature_exterieure,
                 "type_chauffage": type_chauffage,
+                "nb_occupants": nb_occupants,
                 "heures_chauffage_par_an": heures_chauffage_par_an
             },
             "resultats_thermiques": resultats_thermiques,
