@@ -64,13 +64,14 @@ func _on_simulation_demandee(parametres: Dictionary):
 		print("ERREUR : aucune composante valide trouvée.")
 		simulation_en_cours = false
 		return
-
+	
 	var donnees_pour_flask = {
-		"temperature_interieure": parametres["temperature_interieure"],
-		"type_chauffage": parametres["type_chauffage"],
-		"heures_chauffage_par_an": parametres["heures_chauffage_par_an"],
-		"date": parametres["date"],
-		"composantes": composantes
+	"temperature_interieure": parametres["temperature_interieure"],
+	"type_chauffage": parametres["type_chauffage"],
+	"heures_chauffage_par_an": parametres["heures_chauffage_par_an"],
+	"date": parametres["date"],
+	"nb_occupants": parametres["nb_occupants"],
+	"composantes": composantes
 	}
 
 	print("")
