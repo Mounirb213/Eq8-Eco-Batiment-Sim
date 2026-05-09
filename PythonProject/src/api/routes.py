@@ -6,6 +6,7 @@ from models.Batiment import Batiment
 from physique.CalculThermique import CalculThermique
 from services.CalculCout import CalculCout
 from services.Meteo import MeteoService
+from datetime import datetime
 
 api_routes = Blueprint("api_routes", __name__)
 meteo_service = MeteoService()
@@ -77,6 +78,30 @@ def obtenir_temperature_exterieure(date):
 
     return meteo_service.temperature_historique(date)
 
+def obtenir_annee_pour_cout_annuel(date_meteo):
+    """
+    Détermine l'année utilisée pour le calcul annuel.
+
+    Si la météo est actuelle, on utilise la dernière année complète.
+    Exemple : si on est en 2026, on utilise 2025.
+
+    Si une date historique est choisie, on utilise l'année de cette date.
+    """
+    derniere_annee_complete = datetime.now().year - 1
+
+    if date_meteo == "current":
+        return derniere_annee_complete
+
+    try:
+        annee = int(str(date_meteo)[0:4])
+    except (TypeError, ValueError):
+        return derniere_annee_complete
+
+    if annee > derniere_annee_complete:
+        return derniere_annee_complete
+
+    return annee
+
 
 def copier_composantes_avec_isolation(composantes, isolation_type):
     """
@@ -99,13 +124,13 @@ def calculer_simulation_complete(
     temperature_exterieure,
     type_chauffage,
     heures_chauffage_par_an,
-    nb_occupants
+    nb_occupants,
+    temperatures_annuelles
 ):
     """
     Calcule :
-    - le bâtiment
-    - les pertes thermiques
-    - le coût annuel
+    - les pertes instantanées pour la thermographie
+    - le vrai coût annuel avec les températures de toute l'année
     """
     batiment = Batiment(composantes)
 
@@ -117,11 +142,16 @@ def calculer_simulation_complete(
 
     resultats_thermiques = calcul_thermique.calculer()
 
+    besoin_thermique_annuel_kwh = calcul_thermique.calculer_besoin_thermique_annuel_kwh(
+        temperatures_annuelles
+    )
+
     calcul_cout = CalculCout(
         perte_totale_watts=resultats_thermiques["total"],
         type_chauffage=type_chauffage,
         heures_chauffage_par_an=heures_chauffage_par_an,
-        nb_occupants=nb_occupants
+        nb_occupants=nb_occupants,
+        besoin_thermique_annuel_kwh=besoin_thermique_annuel_kwh
     )
 
     resultats_cout = calcul_cout.calculer_resultats()
@@ -173,6 +203,12 @@ def simulate():
 
         temperature_exterieure = obtenir_temperature_exterieure(date_meteo)
 
+        annee_cout_annuel = obtenir_annee_pour_cout_annuel(date_meteo)
+
+        temperatures_annuelles = meteo_service.temperatures_moyennes_journalieres_annee(
+            annee_cout_annuel
+        )
+
         # 1. Simulation actuelle avec l'isolation choisie dans Godot
         batiment, resultats_thermiques, resultats_cout = calculer_simulation_complete(
             composantes=composantes_recues,
@@ -180,7 +216,8 @@ def simulate():
             temperature_exterieure=temperature_exterieure,
             type_chauffage=type_chauffage,
             heures_chauffage_par_an=heures_chauffage_par_an,
-            nb_occupants=nb_occupants
+            nb_occupants=nb_occupants,
+            temperatures_annuelles = temperatures_annuelles
         )
 
         # 2. Simulation de référence avec isolation moyenne
@@ -195,7 +232,8 @@ def simulate():
             temperature_exterieure=temperature_exterieure,
             type_chauffage=type_chauffage,
             heures_chauffage_par_an=heures_chauffage_par_an,
-            nb_occupants=nb_occupants
+            nb_occupants=nb_occupants,
+            temperatures_annuelles=temperatures_annuelles
         )
 
         # 3. Économies par rapport au coût moyen de référence
@@ -215,7 +253,8 @@ def simulate():
                 "temperature_exterieure": temperature_exterieure,
                 "type_chauffage": type_chauffage,
                 "nb_occupants": nb_occupants,
-                "heures_chauffage_par_an": heures_chauffage_par_an
+                "heures_chauffage_par_an": heures_chauffage_par_an,
+                "annee_cout_annuel": annee_cout_annuel,
             },
             "resultats_thermiques": resultats_thermiques,
             "resultats_cout": resultats_cout,

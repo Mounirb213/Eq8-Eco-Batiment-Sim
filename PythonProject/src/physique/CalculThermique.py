@@ -194,3 +194,49 @@ class CalculThermique:
             return 0.0
 
         return temperature
+
+    def calculer_coefficient_global_ua(self):
+        """
+        Calcule la somme U × A de toutes les composantes énergétiques.
+
+        Cette valeur représente la capacité globale du bâtiment à perdre de la chaleur.
+
+        Unité :
+        W/K
+        """
+        total_ua = 0.0
+
+        for composante in self.batiment.composantes_energetiques():
+            coefficient_u = self.obtenir_coefficient_u(
+                composante.type_composant,
+                composante.isolation_type
+            )
+
+            total_ua += coefficient_u * composante.surface
+
+        return total_ua
+
+    def calculer_besoin_thermique_annuel_kwh(self, temperatures_exterieures_journalieres):
+        """
+        Calcule le besoin thermique annuel avec les températures de toute l'année.
+
+        Formule pour chaque jour :
+            énergie_jour = UA × ΔT × 24 / 1000
+
+        Si la température extérieure est plus grande que la température intérieure,
+        ΔT vaut 0, donc aucun chauffage n'est compté.
+        """
+        coefficient_global_ua = self.calculer_coefficient_global_ua()
+
+        besoin_annuel_kwh = 0.0
+
+        for temperature_exterieure_jour in temperatures_exterieures_journalieres:
+            delta_t = self.temperature_interieure - float(temperature_exterieure_jour)
+
+            if delta_t < 0:
+                delta_t = 0.0
+
+            energie_jour_kwh = (coefficient_global_ua * delta_t * 24) / 1000
+            besoin_annuel_kwh += energie_jour_kwh
+
+        return round(besoin_annuel_kwh, 2)
