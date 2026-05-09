@@ -1,21 +1,11 @@
 class CalculCout:
     """
-    Transforme les pertes thermiques en consommation énergétique annuelle et en coût annuel.
+    Transforme les pertes thermiques en consommation énergétique annuelle
+    et en coût annuel.
 
-    Le coût total inclut maintenant :
-    - la consommation de chauffage
+    Le coût total inclut :
+    - la consommation liée au chauffage
     - la consommation liée au nombre d'occupants
-
-    Formules :
-        besoin_thermique_annuel_kwh = (perte_totale_watts * heures_chauffage_par_an) / 1000
-
-        consommation_chauffage_kwh = besoin_thermique_annuel_kwh / rendement
-
-        consommation_occupants_kwh = valeur selon le nombre d'occupants
-
-        consommation_energetique_kwh_an = consommation_chauffage_kwh + consommation_occupants_kwh
-
-        cout_annuel = cout_chauffage + cout_occupants
     """
 
     def __init__(
@@ -24,13 +14,15 @@ class CalculCout:
         type_chauffage="chauffage_electrique",
         heures_chauffage_par_an=4320,
         nb_occupants=1,
-        besoin_thermique_annuel_kwh = None
+        besoin_thermique_annuel_kwh=None
     ):
         self.perte_totale_watts = self.valider_perte_totale_watts(perte_totale_watts)
         self.type_chauffage = self.valider_type_chauffage(type_chauffage)
         self.heures_chauffage_par_an = self.valider_heures_chauffage_par_an(heures_chauffage_par_an)
         self.nb_occupants = self.valider_nb_occupants(nb_occupants)
-        self.besoin_thermique_annuel_kwh = besoin_thermique_annuel_kwh
+        self.besoin_thermique_annuel_kwh = self.valider_besoin_thermique_annuel_kwh(
+            besoin_thermique_annuel_kwh
+        )
 
         self.tarifs_kwh = {
             "chauffage_electrique": 0.10,
@@ -47,7 +39,7 @@ class CalculCout:
         }
 
         # Consommation annuelle estimée selon le nombre d'occupants.
-        # Ces valeurs servent à rendre le simulateur plus réaliste.
+        # Ce sont des valeurs simples pour le simulateur.
         self.consommation_occupants_kwh_an = {
             1: 1000,
             2: 1800,
@@ -56,9 +48,12 @@ class CalculCout:
             5: 3900
         }
 
-        # Tarif utilisé pour la consommation générale des occupants.
-        # Même si le chauffage est au gaz ou au mazout, les appareils restent surtout électriques.
+        # Tarif utilisé pour les usages généraux des occupants.
         self.tarif_occupants_kwh = 0.10
+
+    # --------------------------------------------------
+    # Données de base
+    # --------------------------------------------------
 
     def obtenir_tarif_kwh(self):
         """
@@ -72,28 +67,42 @@ class CalculCout:
         """
         return self.rendements.get(self.type_chauffage, 1.0)
 
-    def calculer_besoin_thermique_annuel_kwh(self):
-        """
-        Convertit la perte thermique totale en besoin thermique annuel.
-        """
-        besoin_thermique = (self.perte_totale_watts * self.heures_chauffage_par_an) / 1000
-        return besoin_thermique
+    # --------------------------------------------------
+    # Consommation chauffage
+    # --------------------------------------------------
 
     def calculer_besoin_thermique_annuel_kwh(self):
         """
         Calcule le besoin thermique annuel.
 
-        Si un besoin annuel réaliste est fourni, on l'utilise directement.
-        Sinon, on garde l'ancienne méthode basée sur perte_totale_watts × heures.
+        Si routes.py fournit déjà un besoin annuel réaliste basé
+        sur les températures de toute l'année, on utilise cette valeur.
+
+        Sinon, on garde l'ancien calcul :
+        perte_totale_watts × heures_chauffage_par_an / 1000
         """
         if self.besoin_thermique_annuel_kwh is not None:
-            try:
-                return float(self.besoin_thermique_annuel_kwh)
-            except (TypeError, ValueError):
-                return 0.0
+            return self.besoin_thermique_annuel_kwh
 
         besoin_thermique = (self.perte_totale_watts * self.heures_chauffage_par_an) / 1000
         return besoin_thermique
+
+    def calculer_consommation_chauffage_annuelle_kwh(self):
+        """
+        Calcule la consommation annuelle liée au chauffage.
+        """
+        besoin_thermique = self.calculer_besoin_thermique_annuel_kwh()
+        rendement = self.obtenir_rendement()
+
+        if rendement <= 0:
+            return 0.0
+
+        consommation_chauffage = besoin_thermique / rendement
+        return consommation_chauffage
+
+    # --------------------------------------------------
+    # Consommation occupants
+    # --------------------------------------------------
 
     def calculer_consommation_occupants_annuelle_kwh(self):
         """
@@ -102,15 +111,18 @@ class CalculCout:
         if self.nb_occupants in self.consommation_occupants_kwh_an:
             return self.consommation_occupants_kwh_an[self.nb_occupants]
 
-        # Sécurité si un jour on accepte plus que 5 occupants.
         consommation_5_occupants = self.consommation_occupants_kwh_an[5]
         occupants_supplementaires = self.nb_occupants - 5
 
         return consommation_5_occupants + occupants_supplementaires * 700
 
+    # --------------------------------------------------
+    # Consommation totale
+    # --------------------------------------------------
+
     def calculer_consommation_facturee_annuelle_kwh(self):
         """
-        Calcule la consommation totale annuelle :
+        Calcule la consommation annuelle totale :
         chauffage + occupants.
         """
         consommation_chauffage = self.calculer_consommation_chauffage_annuelle_kwh()
@@ -119,9 +131,13 @@ class CalculCout:
         consommation_totale = consommation_chauffage + consommation_occupants
         return consommation_totale
 
+    # --------------------------------------------------
+    # Coûts
+    # --------------------------------------------------
+
     def calculer_cout_chauffage_annuel(self):
         """
-        Calcule le coût annuel lié au chauffage.
+        Calcule le coût annuel du chauffage.
         """
         consommation_chauffage = self.calculer_consommation_chauffage_annuelle_kwh()
         tarif_chauffage = self.obtenir_tarif_kwh()
@@ -149,9 +165,13 @@ class CalculCout:
         cout_total = cout_chauffage + cout_occupants
         return cout_total
 
+    # --------------------------------------------------
+    # Résultats
+    # --------------------------------------------------
+
     def calculer_resultats(self):
         """
-        Retourne un dictionnaire avec les résultats.
+        Retourne les résultats complets.
         """
         besoin_thermique = self.calculer_besoin_thermique_annuel_kwh()
 
@@ -184,6 +204,10 @@ class CalculCout:
             "cout_annuel": round(cout_total, 2)
         }
 
+    # --------------------------------------------------
+    # Comparaison optionnelle
+    # --------------------------------------------------
+
     def comparer_avec_perte_optimisee(self, perte_optimisee_watts):
         """
         Compare le coût actuel avec une perte thermique optimisée.
@@ -194,7 +218,8 @@ class CalculCout:
             perte_totale_watts=perte_optimisee_watts,
             type_chauffage=self.type_chauffage,
             heures_chauffage_par_an=self.heures_chauffage_par_an,
-            nb_occupants=self.nb_occupants
+            nb_occupants=self.nb_occupants,
+            besoin_thermique_annuel_kwh=None
         )
 
         resultats_actuels = self.calculer_resultats()
@@ -208,7 +233,9 @@ class CalculCout:
             "economies_annuelles": round(economies, 2)
         }
 
-    # Méthodes de validation
+    # --------------------------------------------------
+    # Validations
+    # --------------------------------------------------
 
     def valider_perte_totale_watts(self, perte_totale_watts):
         try:
@@ -243,6 +270,20 @@ class CalculCout:
 
         return nb_occupants
 
+    def valider_besoin_thermique_annuel_kwh(self, besoin_thermique_annuel_kwh):
+        if besoin_thermique_annuel_kwh is None:
+            return None
+
+        try:
+            besoin_thermique_annuel_kwh = float(besoin_thermique_annuel_kwh)
+        except (TypeError, ValueError):
+            return None
+
+        if besoin_thermique_annuel_kwh < 0:
+            return 0.0
+
+        return besoin_thermique_annuel_kwh
+
     def valider_type_chauffage(self, type_chauffage):
         type_chauffage = str(type_chauffage).strip().lower()
 
@@ -252,13 +293,25 @@ class CalculCout:
         if type_chauffage == "électrique":
             return "chauffage_electrique"
 
+        if type_chauffage == "chauffage electrique":
+            return "chauffage_electrique"
+
+        if type_chauffage == "chauffage électrique":
+            return "chauffage_electrique"
+
         if type_chauffage == "gaz":
+            return "chauffage_gaz"
+
+        if type_chauffage == "chauffage gaz":
             return "chauffage_gaz"
 
         if type_chauffage == "thermopompe":
             return "thermopompe"
 
         if type_chauffage == "mazout":
+            return "chauffage_mazout"
+
+        if type_chauffage == "chauffage mazout":
             return "chauffage_mazout"
 
         types_valides = [
