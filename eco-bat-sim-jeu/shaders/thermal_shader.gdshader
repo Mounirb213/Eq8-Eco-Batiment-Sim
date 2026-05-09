@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded;
+render_mode unshaded, cull_disabled;
 
 uniform float temperature_ratio : hint_range(0.0, 1.0) = 0.5;
 uniform float noise_strength : hint_range(0.0, 0.5) = 0.12;
