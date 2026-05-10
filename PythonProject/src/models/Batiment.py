@@ -3,21 +3,27 @@ from models.ComposantBatiment import ComposantBatiment
 
 class Batiment:
     """
-    Représente un bâtiment contenant plusieurs composantes.
+    Représente le bâtiment complet.
 
-    Cette classe sert à :
-    - stocker toutes les composantes du bâtiment
-    - retourner les composantes utiles pour l'énergie
-    - retourner les composantes utiles pour la thermographie
-    - calculer des surfaces totales
+    Un bâtiment contient plusieurs composantes :
+    - murs
+    - fenêtres
+    - portes
+    - toit
+    - sols
+    - plafonds
+
+    Cette classe sert surtout à organiser les composantes reçues de Godot.
     """
 
     def __init__(self, composantes=None):
         """
-        Initialise le bâtiment avec une liste de composantes.
+        Crée un bâtiment.
 
-        Paramètre :
-        - composantes : liste d'objets ComposantBatiment ou liste de dictionnaires venant de Godot
+        Si une liste de composantes est donnée, on les ajoute une par une.
+        Les composantes peuvent être :
+        - des objets ComposantBatiment
+        - des dictionnaires venant du JSON de Godot
         """
         self.composantes = []
 
@@ -27,18 +33,22 @@ class Batiment:
 
     def ajouter_composante(self, composante):
         """
-        Ajoute une composante au bâtiment.
+        Ajoute une composante dans le bâtiment.
 
-        On accepte :
-        - un objet ComposantBatiment
-        - un dictionnaire, qui sera converti avec from_dict()
+        Si c'est déjà un objet ComposantBatiment, on l'ajoute directement.
+        Si c'est un dictionnaire, on le convertit en objet ComposantBatiment.
         """
+
         if isinstance(composante, ComposantBatiment):
             self.composantes.append(composante)
 
         elif isinstance(composante, dict):
             nouvelle_composante = ComposantBatiment.from_dict(composante)
             self.composantes.append(nouvelle_composante)
+
+    # --------------------------------------------------
+    # Récupération des composantes
+    # --------------------------------------------------
 
     def toutes_les_composantes(self):
         """
@@ -48,7 +58,10 @@ class Batiment:
 
     def composantes_energetiques(self):
         """
-        Retourne seulement les composantes qui doivent être utilisées pour le calcul énergétique.
+        Retourne seulement les composantes utilisées pour le calcul thermique.
+
+        - les murs extérieurs comptent
+        - les faces intérieures ne comptent pas, sauf si prise_en_compte vaut True
         """
         composantes_a_calculer = []
 
@@ -60,25 +73,35 @@ class Batiment:
 
     def composantes_thermographie(self):
         """
-        Retourne toutes les composantes à afficher dans la thermographie.
+        Retourne les composantes utilisées pour l'affichage thermographique.
+
+        Pour l'affichage, on garde toutes les composantes.
+        Même une composante qui ne compte pas dans le calcul peut recevoir une couleur.
         """
         return self.composantes
 
     def composantes_par_type(self, type_composant):
         """
-        Retourne toutes les composantes d'un certain type. Exemple : mur, fenetre, toit, porte
+        Retourne les composantes qui ont un certain type.
+
+        Exemple :
+        composantes_par_type("mur") retourne seulement les murs.
         """
-        resultat = []
+        composantes_trouvees = []
 
         for composante in self.composantes:
             if composante.type_composant == type_composant:
-                resultat.append(composante)
+                composantes_trouvees.append(composante)
 
-        return resultat
+        return composantes_trouvees
+
+    # --------------------------------------------------
+    # Calculs simples sur les surfaces
+    # --------------------------------------------------
 
     def surface_totale(self):
         """
-        Retourne la surface totale de toutes les composantes.
+        Calcule la surface totale de toutes les composantes.
         """
         total = 0.0
 
@@ -89,7 +112,10 @@ class Batiment:
 
     def surface_totale_energetique(self):
         """
-        Retourne la surface totale des composantes utilisées pour le calcul énergétique.
+        Calcule la surface totale utilisée pour le calcul énergétique.
+
+        Cette surface est différente de la surface totale,
+        parce que certaines composantes ne comptent pas dans le calcul.
         """
         total = 0.0
 
@@ -100,13 +126,19 @@ class Batiment:
 
     def nombre_de_composantes(self):
         """
-        Retourne le nombre total de composantes.
+        Retourne le nombre total de composantes dans le bâtiment.
         """
         return len(self.composantes)
 
+    # --------------------------------------------------
+    # Conversion en dictionnaire
+    # --------------------------------------------------
+
     def to_dict(self):
         """
-        Convertit le bâtiment en dictionnaire JSON.
+        Convertit le bâtiment en dictionnaire.
+
+        Ça permet de retourner les informations du bâtiment en JSON.
         """
         liste_composantes = []
 
@@ -119,11 +151,3 @@ class Batiment:
             "surface_totale_energetique": self.surface_totale_energetique(),
             "composantes": liste_composantes
         }
-
-    def __repr__(self):
-        return (
-            f"Batiment("
-            f"nombre_de_composantes={self.nombre_de_composantes()}, "
-            f"surface_totale={self.surface_totale()}, "
-            f"surface_totale_energetique={self.surface_totale_energetique()})"
-        )
