@@ -19,6 +19,7 @@ var serveur_lance_par_godot: bool = false
 
 func _ready():
 	health_request = HTTPRequest.new()
+	health_request.timeout = 1.0
 	add_child(health_request)
 
 	if lancer_automatiquement:

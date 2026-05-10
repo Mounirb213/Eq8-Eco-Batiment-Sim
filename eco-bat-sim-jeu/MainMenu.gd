@@ -224,3 +224,6 @@ func lire_thermographie_active() -> bool:
 
 func lire_vue_coupee_active() -> bool:
 	return vue_coupee_check_button.button_pressed
+	
+func changer_etat_go_button(actif: bool):
+	go_button.disabled = not actif

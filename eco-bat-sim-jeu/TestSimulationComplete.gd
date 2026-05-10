@@ -5,6 +5,7 @@ extends Node3D
 @onready var maison_coupee: Building3D = $maisonCoupee
 @onready var flask_connector: FlaskConnector = $FlaskConnector
 @onready var results_panel: ResultsPanel = $Control/ZoneGris2
+@onready var flask_auto_launcher: FlaskAutoLauncher = $FlaskAutoLauncher
 
 var dernier_resultat_flask: Dictionary = {}
 var simulation_en_cours: bool = false
@@ -41,6 +42,10 @@ func configurer_vue_initiale():
 
 
 func _on_simulation_demandee(parametres: Dictionary):
+	if not flask_auto_launcher.serveur_est_pret:
+		print("Flask n'est pas encore prêt. Attends quelques secondes.")
+		return
+	
 	simulation_en_cours = true
 	dernier_resultat_flask = {}
 
