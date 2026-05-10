@@ -1,4 +1,5 @@
 import copy
+from datetime import datetime
 
 from flask import Blueprint, jsonify, request
 
@@ -6,29 +7,52 @@ from models.Batiment import Batiment
 from physique.CalculThermique import CalculThermique
 from services.CalculCout import CalculCout
 from services.Meteo import MeteoService
-from datetime import datetime
+
 
 api_routes = Blueprint("api_routes", __name__)
 meteo_service = MeteoService()
 
+
 @api_routes.get("/health")
-def health():
+def etat_serveur():
+    """
+    Petite route simple pour vérifier si le serveur Flask fonctionne.
+    """
     return jsonify({"status": "ok"}), 200
 
 
-def lire_temperature_interieure(data):
-    valeur = data.get("temperature_interieure", data.get("temp_interieur_c", 21.0))
+# --------------------------------------------------
+# Lecture des données reçues de Godot
+# --------------------------------------------------
+
+def lire_temperature_interieure(donnees):
+    """
+    Lit la température intérieure envoyée par Godot.
+
+    Si Godot n'envoie rien, on utilise 21 °C par défaut.
+    """
+    valeur = donnees.get("temperature_interieure", 21.0)
 
     try:
         return float(valeur)
     except (TypeError, ValueError):
         return 21.0
 
-def lire_type_chauffage(data):
-    return str(data.get("type_chauffage", "chauffage_electrique")).strip().lower()
 
-def lire_nb_occupants(data):
-    valeur = data.get("nb_occupants", 1)
+def lire_type_chauffage(donnees):
+    """
+    Lit le type de chauffage choisi dans Godot.
+    """
+    return str(donnees.get("type_chauffage", "chauffage_electrique")).strip().lower()
+
+
+def lire_nb_occupants(donnees):
+    """
+    Lit le nombre d'occupants.
+
+    Dans Godot, les choix vont de 1 à 5.
+    """
+    valeur = donnees.get("nb_occupants", 1)
 
     try:
         valeur = int(valeur)
@@ -38,18 +62,35 @@ def lire_nb_occupants(data):
     if valeur < 1:
         return 1
 
+    if valeur > 5:
+        return 5
+
     return valeur
 
-def lire_heures_chauffage_par_an(data):
-    valeur = data.get("heures_chauffage_par_an", 4320)
+
+def lire_heures_chauffage_par_an(donnees):
+    """
+    Lit le nombre d'heures de chauffage par année.
+
+    Cette valeur reste utile comme sécurité, même si le nouveau calcul annuel
+    utilise aussi les températures de toute l'année.
+    """
+    valeur = donnees.get("heures_chauffage_par_an", 4320)
 
     try:
         return float(valeur)
     except (TypeError, ValueError):
         return 4320
 
-def lire_date_meteo(data):
-    date = data.get("date", "current")
+
+def lire_date_meteo(donnees):
+    """
+    Lit la date météo.
+
+    Si Godot envoie "current", on utilise la météo actuelle.
+    Sinon, on utilise la date envoyée.
+    """
+    date = donnees.get("date", "current")
 
     if date is None:
         return "current"
@@ -61,31 +102,50 @@ def lire_date_meteo(data):
 
     return date
 
-def lire_composantes(data):
-    if isinstance(data, list):
-        return data
 
-    composantes = data.get("composantes", [])
+def lire_composantes(donnees):
+    """
+    Lit les composantes envoyées par Godot.
+
+    Normalement, Godot envoie :
+    {
+        "composantes": [...]
+    }
+    """
+    composantes = donnees.get("composantes", [])
 
     if isinstance(composantes, list):
         return composantes
 
     return []
 
-def obtenir_temperature_exterieure(date):
-    if date == "current":
+
+# --------------------------------------------------
+# Météo
+# --------------------------------------------------
+
+def obtenir_temperature_exterieure(date_meteo):
+    """
+    Retourne la température extérieure utilisée pour la thermographie.
+
+    Cette température représente le moment choisi par l'utilisateur.
+    """
+    if date_meteo == "current":
         return meteo_service.temperature_actuelle()
 
-    return meteo_service.temperature_historique(date)
+    return meteo_service.temperature_historique(date_meteo)
+
 
 def obtenir_annee_pour_cout_annuel(date_meteo):
     """
-    Détermine l'année utilisée pour le calcul annuel.
+    Détermine l'année utilisée pour calculer le coût annuel.
 
-    Si la météo est actuelle, on utilise la dernière année complète.
-    Exemple : si on est en 2026, on utilise 2025.
+    Si l'utilisateur choisit une date en 2024, on utilise les températures
+    de toute l'année 2024 pour le coût annuel.
 
-    Si une date historique est choisie, on utilise l'année de cette date.
+    Si l'utilisateur choisit la météo actuelle, on utilise la dernière année complète.
+
+    Aidé avec ChatGPT
     """
     derniere_annee_complete = datetime.now().year - 1
 
@@ -103,12 +163,15 @@ def obtenir_annee_pour_cout_annuel(date_meteo):
     return annee
 
 
+# --------------------------------------------------
+# Simulation
+# --------------------------------------------------
+
 def copier_composantes_avec_isolation(composantes, isolation_type):
     """
-    Crée une copie des composantes et force un type d'isolation.
+    Crée une copie des composantes et change leur isolation.
 
-    Exemple :
-    - toutes les composantes deviennent isolation_type = "moyenne"
+    On utilise ça pour comparer le bâtiment actuel avec une isolation moyenne.
     """
     composantes_copiees = copy.deepcopy(composantes)
 
@@ -128,9 +191,13 @@ def calculer_simulation_complete(
     temperatures_annuelles
 ):
     """
-    Calcule :
-    - les pertes instantanées pour la thermographie
-    - le vrai coût annuel avec les températures de toute l'année
+    Calcule une simulation complète.
+
+    Cette fonction fait :
+    - création du bâtiment
+    - calcul thermique instantané pour la thermographie
+    - calcul annuel du chauffage avec les températures de l'année
+    - calcul du coût annuel
     """
     batiment = Batiment(composantes)
 
@@ -140,8 +207,10 @@ def calculer_simulation_complete(
         temperature_exterieure=temperature_exterieure
     )
 
+    # Résultats instantanés : utiles pour thermographie et pertes du moment.
     resultats_thermiques = calcul_thermique.calculer()
 
+    # Résultat annuel : utilise toutes les températures de l'année.
     besoin_thermique_annuel_kwh = calcul_thermique.calculer_besoin_thermique_annuel_kwh(
         temperatures_annuelles
     )
@@ -161,14 +230,15 @@ def calculer_simulation_complete(
 
 def calculer_economies_annuelles(resultats_cout_actuel, resultats_cout_reference):
     """
+    Calcule les économies par rapport à une isolation moyenne.
+
     Formule :
-    économies = coût moyen de référence - coût actuel
+        économies = coût avec isolation moyenne - coût actuel
 
-    Si coût actuel > coût moyen :
-        économies négatives
-
-    Si coût actuel < coût moyen :
-        économies positives
+    Donc :
+    - isolation mauvaise : économies négatives
+    - isolation moyenne : environ 0
+    - bonne isolation : économies positives
     """
     cout_actuel = resultats_cout_actuel.get("cout_annuel", 0.0)
     cout_reference = resultats_cout_reference.get("cout_annuel", 0.0)
@@ -178,38 +248,48 @@ def calculer_economies_annuelles(resultats_cout_actuel, resultats_cout_reference
     return round(economies, 2)
 
 
-@api_routes.post("/simulate")
-def simulate():
-    try:
-        data = request.get_json(silent=True)
+# --------------------------------------------------
+# Route principale utilisée par Godot
+# --------------------------------------------------
 
-        if data is None:
+@api_routes.post("/simulate")
+def simuler():
+    """
+    Route appelée par Godot quand l'utilisateur clique sur GO.
+    """
+    try:
+        donnees = request.get_json(silent=True)
+
+        if donnees is None:
             return jsonify({
                 "message": "Aucun JSON valide reçu."
             }), 400
 
-        composantes_recues = lire_composantes(data)
+        composantes_recues = lire_composantes(donnees)
 
         if len(composantes_recues) == 0:
             return jsonify({
                 "message": "Aucune composante reçue pour la simulation."
             }), 400
 
-        temperature_interieure = lire_temperature_interieure(data)
-        type_chauffage = lire_type_chauffage(data)
-        nb_occupants = lire_nb_occupants(data)
-        heures_chauffage_par_an = lire_heures_chauffage_par_an(data)
-        date_meteo = lire_date_meteo(data)
+        # Lecture des paramètres envoyés par Godot.
+        temperature_interieure = lire_temperature_interieure(donnees)
+        type_chauffage = lire_type_chauffage(donnees)
+        nb_occupants = lire_nb_occupants(donnees)
+        heures_chauffage_par_an = lire_heures_chauffage_par_an(donnees)
+        date_meteo = lire_date_meteo(donnees)
 
+        # Température du moment choisi. Elle sert à la thermographie.
         temperature_exterieure = obtenir_temperature_exterieure(date_meteo)
 
+        # Année complète utilisée pour calculer le coût annuel.
         annee_cout_annuel = obtenir_annee_pour_cout_annuel(date_meteo)
 
         temperatures_annuelles = meteo_service.temperatures_moyennes_journalieres_annee(
             annee_cout_annuel
         )
 
-        # 1. Simulation actuelle avec l'isolation choisie dans Godot
+        # Simulation avec l'isolation choisie par l'utilisateur.
         batiment, resultats_thermiques, resultats_cout = calculer_simulation_complete(
             composantes=composantes_recues,
             temperature_interieure=temperature_interieure,
@@ -217,10 +297,10 @@ def simulate():
             type_chauffage=type_chauffage,
             heures_chauffage_par_an=heures_chauffage_par_an,
             nb_occupants=nb_occupants,
-            temperatures_annuelles = temperatures_annuelles
+            temperatures_annuelles=temperatures_annuelles
         )
 
-        # 2. Simulation de référence avec isolation moyenne
+        # Simulation de référence avec isolation moyenne.
         composantes_reference = copier_composantes_avec_isolation(
             composantes=composantes_recues,
             isolation_type="moyenne"
@@ -236,7 +316,7 @@ def simulate():
             temperatures_annuelles=temperatures_annuelles
         )
 
-        # 3. Économies par rapport au coût moyen de référence
+        # On ajoute les économies dans les résultats envoyés à Godot.
         economies_annuelles = calculer_economies_annuelles(
             resultats_cout_actuel=resultats_cout,
             resultats_cout_reference=resultats_cout_reference
@@ -254,7 +334,7 @@ def simulate():
                 "type_chauffage": type_chauffage,
                 "nb_occupants": nb_occupants,
                 "heures_chauffage_par_an": heures_chauffage_par_an,
-                "annee_cout_annuel": annee_cout_annuel,
+                "annee_cout_annuel": annee_cout_annuel
             },
             "resultats_thermiques": resultats_thermiques,
             "resultats_cout": resultats_cout,
@@ -268,8 +348,8 @@ def simulate():
 
         return jsonify(reponse), 200
 
-    except Exception as e:
+    except Exception as erreur:
         return jsonify({
             "message": "Erreur pendant la simulation.",
-            "erreur": str(e)
+            "erreur": str(erreur)
         }), 500
