@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://dul378cvojn8q" path="res://maison1.glb" id="8_crdol"]
 [ext_resource type="PackedScene" uid="uid://dxhhy5kspeb0p" path="res://maisonCoupee.glb" id="8_qdflh"]
 [ext_resource type="Script" uid="uid://xuvod5m1vblu" path="res://maison_1.gd" id="9_w5m0l"]
+[ext_resource type="Script" uid="uid://cnjerkl57s7gk" path="res://FlaskAutoLauncher.gd" id="10_w5m0l"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_43spk"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -546,3 +547,6 @@ intensite_variation_thermographie = 0.6
 force_bruit_thermique = 0.04
 force_shade_thermique = 0.08
 force_emission_thermique = 0.45
+
+[node name="FlaskAutoLauncher" type="Node" parent="." unique_id=89380849]
+script = ExtResource("10_w5m0l")
