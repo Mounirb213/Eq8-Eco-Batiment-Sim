@@ -4,6 +4,8 @@ import requests_cache
 from retry_requests import retry
 """
     ****UNE BONNE PARTIE DE CE CODE EST FOURNIE PAR https://open-meteo.com/en/docs/historical-forecast-api****
+    ****AVEC L'AIDE DE CHATGPT****
+    
     
     On utilise :
     - requests: pour la meteo actuelle (API simple forecast)
