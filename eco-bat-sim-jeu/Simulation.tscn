@@ -371,9 +371,9 @@ offset_right = 1920.0
 offset_bottom = 1081.0
 color = Color(0, 0, 0, 0.3137255)
 script = ExtResource("5_vtp77")
-consommation_affichage_path = NodePath("ConsommationPanel/ConsommationTextLabel")
-cout_affichage_path = NodePath("CoutAnnuelPanel/CoutAnnuelTextLabel")
-economies_affichage_path = NodePath("EconomiesPanel/EconomiesTextLabel")
+chemin_consommation = NodePath("ConsommationPanel/ConsommationTextLabel")
+chemin_cout = NodePath("CoutAnnuelPanel/CoutAnnuelTextLabel")
+chemin_economies = NodePath("EconomiesPanel/EconomiesTextLabel")
 
 [node name="ResultatsPanel" type="Panel" parent="Control/ZoneGris2" unique_id=1085520380]
 layout_mode = 0

@@ -1,66 +1,77 @@
 extends Control
 class_name ResultsPanel
 
-@export var consommation_affichage_path: NodePath
-@export var cout_affichage_path: NodePath
-@export var economies_affichage_path: NodePath
+# Chemins vers les labels/champs qui affichent les résultats.
+# On les choisit dans l'inspecteur Godot.
+@export var chemin_consommation: NodePath
+@export var chemin_cout: NodePath
+@export var chemin_economies: NodePath
 
-var consommation_affichage: Node
-var cout_affichage: Node
-var economies_affichage: Node
-var temp_ext_rep_label: Label
+var affichage_consommation: Node
+var affichage_cout: Node
+var affichage_economies: Node
+
+var etiquette_temperature_exterieure: Label
 
 
 func _ready():
+	# On récupère les éléments de l'interface.
 	recuperer_noeuds()
+
+	# Au démarrage, on affiche des valeurs par défaut.
 	afficher_valeurs_par_defaut()
 
 
 func recuperer_noeuds():
-	consommation_affichage = get_node_or_null(consommation_affichage_path)
-	cout_affichage = get_node_or_null(cout_affichage_path)
-	economies_affichage = get_node_or_null(economies_affichage_path)
+	# Ces trois champs sont choisis dans l'inspecteur.
+	affichage_consommation = get_node_or_null(chemin_consommation)
+	affichage_cout = get_node_or_null(chemin_cout)
+	affichage_economies = get_node_or_null(chemin_economies)
 
-	temp_ext_rep_label = find_child("TempExtRepLabel", true, false) as Label
-
-	if temp_ext_rep_label == null:
-		print("ResultsPanel : TempExtRepLabel introuvable.")
+	# Ce label est trouvé automatiquement avec son nom.
+	etiquette_temperature_exterieure = find_child("TempExtRepLabel", true, false) as Label
 
 
 func afficher_valeurs_par_defaut():
-	ecrire_dans_noeud(consommation_affichage, "0")
-	ecrire_dans_noeud(cout_affichage, "0")
-	ecrire_dans_noeud(economies_affichage, "0")
+	# Valeurs affichées avant la première simulation.
+	ecrire_dans_noeud(affichage_consommation, "0")
+	ecrire_dans_noeud(affichage_cout, "0")
+	ecrire_dans_noeud(affichage_economies, "0")
 
-	if temp_ext_rep_label != null:
-		temp_ext_rep_label.text = "0 °C"
+	if etiquette_temperature_exterieure != null:
+		etiquette_temperature_exterieure.text = "0 °C"
 
 
 func afficher_resultats(resultat_flask: Dictionary):
+	# Si Flask ne retourne rien, on remet les valeurs à zéro.
 	if resultat_flask.is_empty():
 		afficher_valeurs_par_defaut()
 		return
 
+	# On lit les valeurs importantes dans la réponse Flask.
 	var consommation = lire_consommation(resultat_flask)
 	var cout = lire_cout_annuel(resultat_flask)
 	var economies = lire_economies(resultat_flask)
 	var temperature_exterieure = lire_temperature_exterieure(resultat_flask)
 
-	ecrire_dans_noeud(consommation_affichage, formater_nombre(consommation))
-	ecrire_dans_noeud(cout_affichage, formater_nombre(cout))
-	ecrire_dans_noeud(economies_affichage, formater_nombre(economies))
+	# On affiche les nombres dans l'interface.
+	ecrire_dans_noeud(affichage_consommation, formater_nombre(consommation))
+	ecrire_dans_noeud(affichage_cout, formater_nombre(cout))
+	ecrire_dans_noeud(affichage_economies, formater_nombre(economies))
 
-	if temp_ext_rep_label != null:
-		temp_ext_rep_label.text = str(round(temperature_exterieure)) + " °C"
+	# La température extérieure est affichée à l'unité avec °C.
+	if etiquette_temperature_exterieure != null:
+		etiquette_temperature_exterieure.text = str(round(temperature_exterieure)) + " °C"
 
 
-func afficher_erreur(message: String):
-	ecrire_dans_noeud(consommation_affichage, "Erreur")
-	ecrire_dans_noeud(cout_affichage, "-")
-	ecrire_dans_noeud(economies_affichage, "-")
+func afficher_erreur(_message: String):
+	# Si la simulation échoue, on affiche une erreur simple.
+	ecrire_dans_noeud(affichage_consommation, "Erreur")
+	ecrire_dans_noeud(affichage_cout, "-")
+	ecrire_dans_noeud(affichage_economies, "-")
 
-	if temp_ext_rep_label != null:
-		temp_ext_rep_label.text = "-"
+	if etiquette_temperature_exterieure != null:
+		etiquette_temperature_exterieure.text = "-"
 
 
 # --------------------------------------------------
@@ -97,10 +108,10 @@ func lire_economies(resultat_flask: Dictionary) -> float:
 
 	var resultats_cout = resultat_flask["resultats_cout"]
 
-	if resultats_cout.has("economies_annuelles"):
-		return float(resultats_cout["economies_annuelles"])
+	if not resultats_cout.has("economies_annuelles"):
+		return 0.0
 
-	return 0.0
+	return float(resultats_cout["economies_annuelles"])
 
 
 func lire_temperature_exterieure(resultat_flask: Dictionary) -> float:
@@ -120,6 +131,8 @@ func lire_temperature_exterieure(resultat_flask: Dictionary) -> float:
 # --------------------------------------------------
 
 func ecrire_dans_noeud(noeud: Node, texte: String):
+	# Cette fonction permet d'écrire dans différents types de nodes.
+	# Comme ça, ça marche avec Label, LineEdit, TextEdit ou Button.
 	if noeud == null:
 		return
 
@@ -141,10 +154,11 @@ func ecrire_dans_noeud(noeud: Node, texte: String):
 
 
 # --------------------------------------------------
-# Formatage
+# Formatage des nombres
 # --------------------------------------------------
 
 func formater_nombre(valeur: float) -> String:
+	# Les résultats principaux sont arrondis à 2 décimales.
 	return str(arrondir(valeur, 2))
 
 
