@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bscf64t74m7w1"]
 
-[ext_resource type="Script" uid="uid://br881xuibieeb" path="res://TestSimulationComplete.gd" id="1_mpm82"]
+[ext_resource type="Script" uid="uid://cu7u2tsfucln7" path="res://ControleurSimulation.gd" id="1_mpm82"]
 [ext_resource type="Texture2D" uid="uid://bqe4fd6g78wlq" path="res://Therm.png" id="2_1gfko"]
 [ext_resource type="Script" uid="uid://dffjy84mxski2" path="res://Building3D.gd" id="2_t6gs0"]
 [ext_resource type="Script" uid="uid://c8xejh7l56f6p" path="res://MainMenu.gd" id="3_uobxk"]
@@ -531,18 +531,8 @@ script = ExtResource("5_mpm82")
 [node name="maisonCoupee" parent="." unique_id=1524043376 instance=ExtResource("8_qdflh")]
 visible = false
 script = ExtResource("2_t6gs0")
-temperature_max_couleur = 25.0
-intensite_pertes_thermographie = 10.0
 intensite_variation_thermographie = 0.6
-force_bruit_thermique = 0.04
-force_shade_thermique = 0.08
-force_emission_thermique = 0.45
 
 [node name="maison" parent="." unique_id=1276571287 instance=ExtResource("8_crdol")]
 script = ExtResource("9_w5m0l")
-temperature_max_couleur = 25.0
-intensite_pertes_thermographie = 10.0
 intensite_variation_thermographie = 0.6
-force_bruit_thermique = 0.04
-force_shade_thermique = 0.08
-force_emission_thermique = 0.45
