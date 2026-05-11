@@ -1,51 +1,79 @@
 extends Node3D
 class_name Building3D
 
-const THERMAL_SHADER = preload("res://shaders/thermal_shader.gdshader")
+# Shader utilisé pour l'effet thermographique.
+# Classe aidée avec ChatGPT
+const SHADER_THERMIQUE = preload("res://shaders/thermal_shader.gdshader")
 
+
+# Valeurs envoyées à Python si une composante n'a pas de donnée spéciale.
 @export var isolation_par_defaut: String = "moyenne"
+
+# Échelle utilisée pour transformer une température en couleur.
 @export var temperature_min_couleur: float = -15.0
-@export var temperature_max_couleur: float = 30.0
+@export var temperature_max_couleur: float = 25.0
+
+# Si une composante a des métadonnées Godot, on peut les utiliser.
 @export var utiliser_metadonnees: bool = true
+
+# Correction des surfaces trop grandes.
+# Certains modèles 3D ne sont pas exactement à l'échelle réelle.
 @export var corriger_surface_automatique: bool = true
 @export var seuil_surface_trop_grande: float = 20.0
 @export var facteur_surface_trop_grande: float = 0.03
-@export var utiliser_pertes_pour_thermographie: bool = true
-@export var intensite_pertes_thermographie: float = 12.0
-@export var intensite_variation_thermographie: float = 2.5
-@export var utiliser_shader_thermique: bool = true
-@export var force_bruit_thermique: float = 0.14
-@export var force_shade_thermique: float = 0.18
-@export var force_emission_thermique: float = 0.65
 
+# Réglages de la thermographie.
+@export var utiliser_pertes_pour_thermographie: bool = true
+@export var intensite_pertes_thermographie: float = 10.0
+@export var intensite_variation_thermographie: float = 0.5
+
+# Réglages du shader thermique.
+@export var utiliser_shader_thermique: bool = true
+@export var force_bruit_thermique: float = 0.04
+@export var force_shade_thermique: float = 0.08
+@export var force_emission_thermique: float = 0.45
+
+
+# Liste des MeshInstance3D trouvés dans la maison.
 var noeuds_maillages: Array = []
+
+# On garde les matériaux d'origine pour pouvoir enlever la thermographie.
 var materiaux_originaux: Dictionary = {}
 
-# Ce fichier a été grandement aidé par ChatGPT 
-# pour les calculs de surfaces qui sont très compliqués
 
 func _ready():
 	actualiser_liste_maillages()
 
 
+# --------------------------------------------------
+# RÉCUPÉRATION DES MESHES DE LA MAISON
+# --------------------------------------------------
+
 func actualiser_liste_maillages():
+	# On vide la liste avant de la remplir à nouveau.
 	noeuds_maillages.clear()
+
+	# On cherche tous les MeshInstance3D dans les enfants de la maison.
 	collecter_maillages_recursif(self)
 
 
 func collecter_maillages_recursif(noeud: Node):
+	# Si le node est un mesh 3D, on peut l'ajouter à la liste.
 	if noeud is MeshInstance3D:
-		var mesh_instance = noeud as MeshInstance3D
+		var maillage = noeud as MeshInstance3D
 
-		if mesh_instance.mesh != null:
-			if not doit_ignorer_completement(mesh_instance):
-				noeuds_maillages.append(mesh_instance)
+		if maillage.mesh != null:
+			if not doit_ignorer_completement(maillage):
+				noeuds_maillages.append(maillage)
 
+	# On répète la recherche dans les enfants.
 	for enfant in noeud.get_children():
 		collecter_maillages_recursif(enfant)
 
 
 func doit_ignorer_completement(noeud: Node) -> bool:
+	# Si un mesh a la métadonnée "ignorer_completement",
+	# il ne sera pas utilisé dans la simulation ni dans la thermographie.
 	if utiliser_metadonnees and noeud.has_meta("ignorer_completement"):
 		return bool(noeud.get_meta("ignorer_completement"))
 
@@ -57,15 +85,16 @@ func doit_ignorer_completement(noeud: Node) -> bool:
 # --------------------------------------------------
 
 func extraire_composantes_pour_simulation() -> Array:
+	# On met la liste à jour avant d'extraire les composantes.
 	actualiser_liste_maillages()
 
 	var composantes: Array = []
 
-	for noeud in noeuds_maillages:
-		if not est_noeud_valide_pour_simulation(noeud):
+	for maillage in noeuds_maillages:
+		if not est_maillage_valide_pour_simulation(maillage):
 			continue
 
-		var composante = construire_composante_depuis_noeud(noeud)
+		var composante = construire_composante_depuis_maillage(maillage)
 
 		if not composante.is_empty():
 			composantes.append(composante)
@@ -73,15 +102,17 @@ func extraire_composantes_pour_simulation() -> Array:
 	return composantes
 
 
-func est_noeud_valide_pour_simulation(noeud: MeshInstance3D) -> bool:
+func est_maillage_valide_pour_simulation(maillage: MeshInstance3D) -> bool:
+	# Si une métadonnée dit clairement de l'inclure ou non, on la respecte.
 	if utiliser_metadonnees:
-		if noeud.has_meta("inclure_simulation"):
-			return bool(noeud.get_meta("inclure_simulation"))
+		if maillage.has_meta("inclure_simulation"):
+			return bool(maillage.get_meta("inclure_simulation"))
 
-		if noeud.has_meta("type_composant"):
+		if maillage.has_meta("type_composant"):
 			return true
 
-	var infos_nom = analyser_nom_composant(noeud.name)
+	# Sinon, on regarde le nom du mesh.
+	var infos_nom = analyser_nom_composant(maillage.name)
 
 	if infos_nom["nom_fiable"] == false:
 		return false
@@ -89,8 +120,8 @@ func est_noeud_valide_pour_simulation(noeud: MeshInstance3D) -> bool:
 	return true
 
 
-func construire_composante_depuis_noeud(noeud: MeshInstance3D) -> Dictionary:
-	var nom = str(noeud.name)
+func construire_composante_depuis_maillage(maillage: MeshInstance3D) -> Dictionary:
+	var nom = str(maillage.name)
 
 	var infos_nom = analyser_nom_composant(nom)
 
@@ -98,36 +129,38 @@ func construire_composante_depuis_noeud(noeud: MeshInstance3D) -> Dictionary:
 	var face = infos_nom["face"]
 	var type_composant = infos_nom["type_composant"]
 
+	# Les métadonnées sont prioritaires si elles existent.
 	if utiliser_metadonnees:
-		if noeud.has_meta("nom_logique"):
-			nom_logique = str(noeud.get_meta("nom_logique"))
+		if maillage.has_meta("nom_logique"):
+			nom_logique = str(maillage.get_meta("nom_logique"))
 
-		if noeud.has_meta("face"):
-			face = str(noeud.get_meta("face")).to_lower()
+		if maillage.has_meta("face"):
+			face = str(maillage.get_meta("face")).to_lower()
 
-		if noeud.has_meta("type_composant"):
-			type_composant = str(noeud.get_meta("type_composant")).to_lower()
+		if maillage.has_meta("type_composant"):
+			type_composant = str(maillage.get_meta("type_composant")).to_lower()
 
-	var surface = calculer_surface_mesh_instance(noeud)
+	var surface = calculer_surface_maillage(maillage)
 
 	if corriger_surface_automatique:
 		surface = corriger_surface(surface)
 
-	if utiliser_metadonnees and noeud.has_meta("surface"):
-		surface = float(noeud.get_meta("surface"))
+	if utiliser_metadonnees and maillage.has_meta("surface"):
+		surface = float(maillage.get_meta("surface"))
 
 	var isolation_type = isolation_par_defaut
 
-	if utiliser_metadonnees and noeud.has_meta("isolation_type"):
-		isolation_type = str(noeud.get_meta("isolation_type")).to_lower()
+	if utiliser_metadonnees and maillage.has_meta("isolation_type"):
+		isolation_type = str(maillage.get_meta("isolation_type")).to_lower()
 
+	# Par défaut, une face extérieure compte pour le calcul énergétique.
 	var prise_en_compte = false
 
 	if face == "ext":
 		prise_en_compte = true
 
-	if utiliser_metadonnees and noeud.has_meta("prise_en_compte"):
-		prise_en_compte = bool(noeud.get_meta("prise_en_compte"))
+	if utiliser_metadonnees and maillage.has_meta("prise_en_compte"):
+		prise_en_compte = bool(maillage.get_meta("prise_en_compte"))
 
 	return {
 		"nom": nom,
@@ -141,10 +174,14 @@ func construire_composante_depuis_noeud(noeud: MeshInstance3D) -> Dictionary:
 
 
 # --------------------------------------------------
-# ANALYSE DES NOMS DES MESHES
+# ANALYSE DU NOM DES MESHES
 # --------------------------------------------------
 
 func analyser_nom_composant(nom: String) -> Dictionary:
+	# Exemple de nom :
+	# Mur_Ch01_Ext_01
+	# Mur_Ch01_Int_01
+	# Fenetre_Ch01_03
 	var nom_minuscule = nom.to_lower()
 
 	var face = "ext"
@@ -157,27 +194,27 @@ func analyser_nom_composant(nom: String) -> Dictionary:
 	var type_composant = ""
 	var nom_fiable = false
 
-	if "fenetre" in nom_minuscule or "fenêtre" in nom_minuscule or "window" in nom_minuscule:
+	if "fenetre" in nom_minuscule:
 		type_composant = "fenetre"
 		nom_fiable = true
 
-	elif "porte" in nom_minuscule or "door" in nom_minuscule:
+	elif "porte" in nom_minuscule:
 		type_composant = "porte"
 		nom_fiable = true
 
-	elif "toit" in nom_minuscule or "roof" in nom_minuscule:
+	elif "toit" in nom_minuscule:
 		type_composant = "toit"
 		nom_fiable = true
 
-	elif "plancher" in nom_minuscule or "sol" in nom_minuscule or "floor" in nom_minuscule:
+	elif "sol" in nom_minuscule or "plancher" in nom_minuscule:
 		type_composant = "sol"
 		nom_fiable = true
 
-	elif "plafond" in nom_minuscule or "ceiling" in nom_minuscule:
+	elif "plafond" in nom_minuscule:
 		type_composant = "plafond"
 		nom_fiable = true
 
-	elif "mur" in nom_minuscule or "wall" in nom_minuscule:
+	elif "mur" in nom_minuscule:
 		type_composant = "mur"
 		nom_fiable = true
 
@@ -192,18 +229,20 @@ func analyser_nom_composant(nom: String) -> Dictionary:
 
 
 func extraire_nom_logique(nom: String) -> String:
+	# Le nom logique sert à regrouper les faces intérieures et extérieures.
+	# Exemple :
+	# Mur_Ch01_Ext_01 devient Mur_Ch01
 	var parties = nom.split("_")
 
 	if parties.size() >= 2:
 		var derniere_partie = str(parties[parties.size() - 1]).to_lower()
 
 		if derniere_partie.is_valid_int():
-			if parties.size() >= 2:
-				var avant_derniere = str(parties[parties.size() - 2]).to_lower()
+			var avant_derniere = str(parties[parties.size() - 2]).to_lower()
 
-				if avant_derniere == "int" or avant_derniere == "ext":
-					parties.remove_at(parties.size() - 1)
-					parties.remove_at(parties.size() - 1)
+			if avant_derniere == "int" or avant_derniere == "ext":
+				parties.remove_at(parties.size() - 1)
+				parties.remove_at(parties.size() - 1)
 
 		elif derniere_partie == "int" or derniere_partie == "ext":
 			parties.remove_at(parties.size() - 1)
@@ -222,17 +261,21 @@ func joindre_parties_avec_underscore(parties: Array) -> String:
 
 	return resultat
 
-	
+
 # --------------------------------------------------
 # CALCUL DE SURFACE
 # --------------------------------------------------
 
-func calculer_surface_mesh_instance(noeud: MeshInstance3D) -> float:
-	if noeud.mesh == null:
+func calculer_surface_maillage(maillage: MeshInstance3D) -> float:
+	# Cette partie est plus avancée.
+	# Elle calcule la surface en additionnant les triangles du mesh.
+	# Aidé avec ChatGPT
+
+	if maillage.mesh == null:
 		return 0.0
 
 	var surface_totale = 0.0
-	var mesh = noeud.mesh
+	var mesh = maillage.mesh
 
 	for index_surface in range(mesh.get_surface_count()):
 		var tableaux = mesh.surface_get_arrays(index_surface)
@@ -249,35 +292,42 @@ func calculer_surface_mesh_instance(noeud: MeshInstance3D) -> float:
 		if sommets.is_empty():
 			continue
 
+		# Cas 1 : le mesh n'a pas d'indices.
 		if indices == null or indices.is_empty():
 			var i = 0
 
 			while i + 2 < sommets.size():
-				var a = noeud.global_transform * sommets[i]
-				var b = noeud.global_transform * sommets[i + 1]
-				var c = noeud.global_transform * sommets[i + 2]
+				var point_a = maillage.global_transform * sommets[i]
+				var point_b = maillage.global_transform * sommets[i + 1]
+				var point_c = maillage.global_transform * sommets[i + 2]
 
-				surface_totale += calculer_aire_triangle(a, b, c)
+				surface_totale += calculer_aire_triangle(point_a, point_b, point_c)
+
 				i += 3
 
+		# Cas 2 : le mesh utilise des indices.
 		else:
 			var i = 0
 
 			while i + 2 < indices.size():
-				var a = noeud.global_transform * sommets[indices[i]]
-				var b = noeud.global_transform * sommets[indices[i + 1]]
-				var c = noeud.global_transform * sommets[indices[i + 2]]
+				var point_a = maillage.global_transform * sommets[indices[i]]
+				var point_b = maillage.global_transform * sommets[indices[i + 1]]
+				var point_c = maillage.global_transform * sommets[indices[i + 2]]
 
-				surface_totale += calculer_aire_triangle(a, b, c)
+				surface_totale += calculer_aire_triangle(point_a, point_b, point_c)
+
 				i += 3
 
 	return surface_totale
 
 
-func calculer_aire_triangle(a: Vector3, b: Vector3, c: Vector3) -> float:
-	var ab = b - a
-	var ac = c - a
-	var aire = 0.5 * ab.cross(ac).length()
+func calculer_aire_triangle(point_a: Vector3, point_b: Vector3, point_c: Vector3) -> float:
+	# Aire d'un triangle en 3D.
+	# Aidé avec ChatGPT
+	var cote_ab = point_b - point_a
+	var cote_ac = point_c - point_a
+
+	var aire = 0.5 * cote_ab.cross(cote_ac).length()
 
 	return aire
 
@@ -297,9 +347,9 @@ func appliquer_thermographie(
 
 	var perte_max = trouver_perte_max(pertes_par_composant)
 
-	for noeud in noeuds_maillages:
-		var temperature_base = trouver_temperature_pour_noeud(
-			noeud,
+	for maillage in noeuds_maillages:
+		var temperature_base = trouver_temperature_pour_maillage(
+			maillage,
 			thermographie,
 			temperature_interieure_par_defaut,
 			temperature_exterieure_par_defaut
@@ -309,37 +359,37 @@ func appliquer_thermographie(
 			continue
 
 		var temperature_visuelle = calculer_temperature_visuelle(
-			noeud,
+			maillage,
 			float(temperature_base),
 			pertes_par_composant,
 			perte_max
 		)
 
 		if utiliser_shader_thermique:
-			appliquer_shader_thermique_sur_noeud(noeud, temperature_visuelle)
+			appliquer_shader_thermique_sur_maillage(maillage, temperature_visuelle)
 		else:
 			var couleur = convertir_temperature_en_couleur(temperature_visuelle)
-			couleur = appliquer_effet_shade_sur_couleur(noeud, couleur)
-			appliquer_couleur_sur_noeud(noeud, couleur)
+			couleur = ajouter_ombrage_sur_couleur(maillage, couleur)
+			appliquer_couleur_sur_maillage(maillage, couleur)
 
 
-func trouver_temperature_pour_noeud(
-	noeud: MeshInstance3D,
+func trouver_temperature_pour_maillage(
+	maillage: MeshInstance3D,
 	thermographie: Dictionary,
 	temperature_interieure_par_defaut = null,
 	temperature_exterieure_par_defaut = null
 ):
-	var infos_nom = analyser_nom_composant(noeud.name)
+	var infos_nom = analyser_nom_composant(maillage.name)
 
 	var nom_logique = infos_nom["nom_logique"]
 	var face = infos_nom["face"]
 
 	if utiliser_metadonnees:
-		if noeud.has_meta("nom_logique"):
-			nom_logique = str(noeud.get_meta("nom_logique"))
+		if maillage.has_meta("nom_logique"):
+			nom_logique = str(maillage.get_meta("nom_logique"))
 
-		if noeud.has_meta("face"):
-			face = str(noeud.get_meta("face")).to_lower()
+		if maillage.has_meta("face"):
+			face = str(maillage.get_meta("face")).to_lower()
 
 	if thermographie.has(nom_logique):
 		var donnees_composante = thermographie[nom_logique]
@@ -358,7 +408,8 @@ func trouver_temperature_pour_noeud(
 		return temperature_exterieure_par_defaut
 
 	return null
-	
+
+
 func trouver_perte_max(pertes_par_composant: Dictionary) -> float:
 	var perte_max = 0.0
 
@@ -372,43 +423,44 @@ func trouver_perte_max(pertes_par_composant: Dictionary) -> float:
 
 
 func calculer_temperature_visuelle(
-	noeud: MeshInstance3D,
+	maillage: MeshInstance3D,
 	temperature_base: float,
 	pertes_par_composant: Dictionary,
 	perte_max: float
 ) -> float:
-	var infos_nom = analyser_nom_composant(noeud.name)
+	var infos_nom = analyser_nom_composant(maillage.name)
+
 	var face = infos_nom["face"]
 	var type_composant = infos_nom["type_composant"]
 
-	if utiliser_metadonnees and noeud.has_meta("face"):
-		face = str(noeud.get_meta("face")).to_lower()
+	if utiliser_metadonnees and maillage.has_meta("face"):
+		face = str(maillage.get_meta("face")).to_lower()
 
-	if utiliser_metadonnees and noeud.has_meta("type_composant"):
-		type_composant = str(noeud.get_meta("type_composant")).to_lower()
+	if utiliser_metadonnees and maillage.has_meta("type_composant"):
+		type_composant = str(maillage.get_meta("type_composant")).to_lower()
 
-	var perte_noeud = obtenir_perte_du_noeud(noeud, pertes_par_composant)
+	var perte_maillage = obtenir_perte_du_maillage(maillage, pertes_par_composant)
 	var ratio_perte = 0.0
 
 	if perte_max > 0:
-		ratio_perte = perte_noeud / perte_max
+		ratio_perte = perte_maillage / perte_max
 		ratio_perte = clamp(ratio_perte, 0.0, 1.0)
 
 	var temperature_visuelle = temperature_base
 
 	if face == "ext":
-		# On refroidit visuellement l'extérieur pour éviter que tout devienne jaune.
+		# On refroidit un peu l'extérieur pour éviter que tout devienne jaune.
 		temperature_visuelle = temperature_base - 6.0
 
-		# Les composants avec plus de pertes deviennent plus chauds.
+		# Plus une composante perd de chaleur, plus elle devient chaude visuellement.
 		temperature_visuelle += ratio_perte * intensite_pertes_thermographie
 
 	elif face == "int":
-		# L'intérieur reste chaud, mais pas forcément rouge partout.
+		# L'intérieur est chaud, mais on évite qu'il devienne rouge partout.
 		temperature_visuelle = temperature_base - 2.0
 		temperature_visuelle += ratio_perte * 3.0
 
-	# Ajustements par type pour éviter des effets trop extrêmes.
+	# Petits ajustements pour rendre le résultat plus agréable.
 	if type_composant == "toit":
 		temperature_visuelle -= 2.0
 
@@ -421,26 +473,25 @@ func calculer_temperature_visuelle(
 	if type_composant == "porte":
 		temperature_visuelle += ratio_perte * 1.5
 
-	var variation = calculer_variation_selon_nom(noeud.name)
+	var variation = calculer_variation_selon_nom(maillage.name)
 	temperature_visuelle += variation * intensite_variation_thermographie
 
 	return temperature_visuelle
 
-func obtenir_perte_du_noeud(noeud: MeshInstance3D, pertes_par_composant: Dictionary) -> float:
-	var nom_noeud = str(noeud.name)
 
-	if pertes_par_composant.has(nom_noeud):
-		return float(pertes_par_composant[nom_noeud])
+func obtenir_perte_du_maillage(maillage: MeshInstance3D, pertes_par_composant: Dictionary) -> float:
+	var nom_maillage = str(maillage.name)
+
+	if pertes_par_composant.has(nom_maillage):
+		return float(pertes_par_composant[nom_maillage])
 
 	return 0.0
 
 
 func calculer_variation_selon_nom(nom: String) -> float:
-	"""
-	Retourne une petite variation stable entre -1 et 1.
-	Chaque mesh aura toujours la même variation selon son nom.
-	Ça évite une thermographie trop uniforme.
-	"""
+	# Donne une petite variation stable selon le nom du mesh.
+	# Ça évite que tous les murs aient exactement la même couleur.
+	# Aidé avec ChatGPT
 	var total = 0
 
 	for i in range(nom.length()):
@@ -451,12 +502,8 @@ func calculer_variation_selon_nom(nom: String) -> float:
 	return valeur * 2.0 - 1.0
 
 
-func appliquer_effet_shade_sur_couleur(noeud: MeshInstance3D, couleur: Color) -> Color:
-	"""
-	Ajoute un léger effet shade à la couleur.
-	Cela rend la thermographie moins plate visuellement.
-	"""
-	var variation = calculer_variation_selon_nom(noeud.name)
+func ajouter_ombrage_sur_couleur(maillage: MeshInstance3D, couleur: Color) -> Color:
+	var variation = calculer_variation_selon_nom(maillage.name)
 
 	if variation > 0:
 		return couleur.lerp(Color(1.0, 1.0, 1.0), variation * 0.12)
@@ -465,33 +512,36 @@ func appliquer_effet_shade_sur_couleur(noeud: MeshInstance3D, couleur: Color) ->
 
 
 func convertir_temperature_en_couleur(temperature: float) -> Color:
-	var t = inverse_lerp(temperature_min_couleur, temperature_max_couleur, temperature)
-	t = clamp(t, 0.0, 1.0)
+	# Convertit une température en couleur.
+	# Bleu = froid, rouge = chaud.
+	var position = inverse_lerp(temperature_min_couleur, temperature_max_couleur, temperature)
+	position = clamp(position, 0.0, 1.0)
 
-	if t < 0.25:
-		var progression = t / 0.25
+	if position < 0.25:
+		var progression = position / 0.25
 		return Color(0.0, 0.0, 1.0).lerp(Color(0.0, 1.0, 1.0), progression)
 
-	if t < 0.5:
-		var progression = (t - 0.25) / 0.25
+	if position < 0.5:
+		var progression = (position - 0.25) / 0.25
 		return Color(0.0, 1.0, 1.0).lerp(Color(0.0, 1.0, 0.0), progression)
 
-	if t < 0.75:
-		var progression = (t - 0.5) / 0.25
+	if position < 0.75:
+		var progression = (position - 0.5) / 0.25
 		return Color(0.0, 1.0, 0.0).lerp(Color(1.0, 1.0, 0.0), progression)
 
-	var progression = (t - 0.75) / 0.25
+	var progression = (position - 0.75) / 0.25
+
 	return Color(1.0, 1.0, 0.0).lerp(Color(1.0, 0.0, 0.0), progression)
 
 
-func appliquer_couleur_sur_noeud(noeud: MeshInstance3D, couleur: Color):
-	if noeud.mesh == null:
+func appliquer_couleur_sur_maillage(maillage: MeshInstance3D, couleur: Color):
+	if maillage.mesh == null:
 		return
 
-	enregistrer_materiaux_originaux(noeud)
+	enregistrer_materiaux_originaux(maillage)
 
-	for surface_index in range(noeud.mesh.get_surface_count()):
-		var materiau = noeud.get_surface_override_material(surface_index)
+	for index_surface in range(maillage.mesh.get_surface_count()):
+		var materiau = maillage.get_surface_override_material(index_surface)
 
 		if materiau == null:
 			materiau = StandardMaterial3D.new()
@@ -503,45 +553,16 @@ func appliquer_couleur_sur_noeud(noeud: MeshInstance3D, couleur: Color):
 			materiau.emission_enabled = true
 			materiau.emission = couleur
 			materiau.emission_energy_multiplier = 0.4
+			materiau.cull_mode = BaseMaterial3D.CULL_DISABLED
 
-		noeud.set_surface_override_material(surface_index, materiau)
+		maillage.set_surface_override_material(index_surface, materiau)
 
 
-func enregistrer_materiaux_originaux(noeud: MeshInstance3D):
-	var cle = str(noeud.get_path())
-
-	if materiaux_originaux.has(cle):
+func appliquer_shader_thermique_sur_maillage(maillage: MeshInstance3D, temperature_visuelle: float):
+	if maillage.mesh == null:
 		return
 
-	var liste_materiaux = []
-
-	for surface_index in range(noeud.mesh.get_surface_count()):
-		liste_materiaux.append(noeud.get_surface_override_material(surface_index))
-
-	materiaux_originaux[cle] = liste_materiaux
-
-
-func reinitialiser_thermographie():
-	if noeuds_maillages.is_empty():
-		actualiser_liste_maillages()
-
-	for noeud in noeuds_maillages:
-		var cle = str(noeud.get_path())
-
-		if not materiaux_originaux.has(cle):
-			continue
-
-		var liste_materiaux = materiaux_originaux[cle]
-
-		for surface_index in range(noeud.mesh.get_surface_count()):
-			if surface_index < liste_materiaux.size():
-				noeud.set_surface_override_material(surface_index, liste_materiaux[surface_index])
-		
-func appliquer_shader_thermique_sur_noeud(noeud: MeshInstance3D, temperature_visuelle: float):
-	if noeud.mesh == null:
-		return
-
-	enregistrer_materiaux_originaux(noeud)
+	enregistrer_materiaux_originaux(maillage)
 
 	var ratio_temperature = inverse_lerp(
 		temperature_min_couleur,
@@ -551,17 +572,49 @@ func appliquer_shader_thermique_sur_noeud(noeud: MeshInstance3D, temperature_vis
 
 	ratio_temperature = clamp(ratio_temperature, 0.0, 1.0)
 
-	for surface_index in range(noeud.mesh.get_surface_count()):
+	for index_surface in range(maillage.mesh.get_surface_count()):
 		var materiau = ShaderMaterial.new()
 
-		materiau.shader = THERMAL_SHADER
+		materiau.shader = SHADER_THERMIQUE
 
 		materiau.set_shader_parameter("temperature_ratio", ratio_temperature)
 		materiau.set_shader_parameter("noise_strength", force_bruit_thermique)
 		materiau.set_shader_parameter("shade_strength", force_shade_thermique)
 		materiau.set_shader_parameter("emission_strength", force_emission_thermique)
 
-		noeud.set_surface_override_material(surface_index, materiau)
+		maillage.set_surface_override_material(index_surface, materiau)
+
+
+func enregistrer_materiaux_originaux(maillage: MeshInstance3D):
+	var cle = str(maillage.get_path())
+
+	if materiaux_originaux.has(cle):
+		return
+
+	var liste_materiaux = []
+
+	for index_surface in range(maillage.mesh.get_surface_count()):
+		liste_materiaux.append(maillage.get_surface_override_material(index_surface))
+
+	materiaux_originaux[cle] = liste_materiaux
+
+
+func reinitialiser_thermographie():
+	if noeuds_maillages.is_empty():
+		actualiser_liste_maillages()
+
+	for maillage in noeuds_maillages:
+		var cle = str(maillage.get_path())
+
+		if not materiaux_originaux.has(cle):
+			continue
+
+		var liste_materiaux = materiaux_originaux[cle]
+
+		for index_surface in range(maillage.mesh.get_surface_count()):
+			if index_surface < liste_materiaux.size():
+				maillage.set_surface_override_material(index_surface, liste_materiaux[index_surface])
+
 
 # --------------------------------------------------
 # OUTILS
@@ -570,16 +623,11 @@ func appliquer_shader_thermique_sur_noeud(noeud: MeshInstance3D, temperature_vis
 func arrondir(valeur: float, nombre_decimales: int) -> float:
 	var facteur = pow(10.0, nombre_decimales)
 	return round(valeur * facteur) / facteur
-	
+
+
 func corriger_surface(surface_brute: float) -> float:
-	"""
-	Corrige seulement les surfaces anormalement grandes.
-
-	Exemple :
-	- une fenêtre de 2.4 m² reste 2.4 m²
-	- un mur calculé à 493 m² devient environ 14.8 m²
-	"""
-
+	# Si une surface est beaucoup trop grande, on la réduit.
+	# Ça corrige les problèmes d'échelle du modèle 3D.
 	if surface_brute > seuil_surface_trop_grande:
 		return surface_brute * facteur_surface_trop_grande
 
